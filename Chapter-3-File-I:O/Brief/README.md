@@ -434,3 +434,73 @@ else { /* process buffer[0..bytes_read-1] */ }
 
 ### Why It's Critical:
 This function is essential for **low-level I/O**, with nuances based on file type and system constraints.
+
+# Section 3.8: `write()` Function Overview
+
+## Function Prototype
+```c
+#include <unistd.h>  
+ssize_t write(int fd, const void *buf, size_t nbytes);  
+```
+
+## Return Value
+- **On Success:**  
+  - Returns the number of bytes written (usually equal to `nbytes`).  
+- **On Failure:**  
+  - Returns `-1` (check `errno` for the error cause).  
+
+---
+
+## Common Errors
+- **Disk full:** No space left on the disk.  
+- **Exceeding process file size limit:** If the write exceeds the allowed file size for the process.  
+
+---
+
+## Key Behaviors
+1. **File Offset Management:**
+   - For **regular files**, writing starts at the **current file offset**.  
+   - If the file was opened with **`O_APPEND`**, the offset is set to the **end of the file** before each write.  
+
+2. **Offset Advancement:**
+   - After a successful write, the file offset advances by the number of bytes written.
+
+---
+
+## Example Usage
+```c
+#include <unistd.h>
+#include <fcntl.h>
+
+int fd = open("example.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+if (fd == -1) {
+    perror("open failed");
+    return 1;
+}
+
+const char *data = "Hello, World!";
+ssize_t bytes_written = write(fd, data, 13);
+
+if (bytes_written == -1) {
+    perror("write failed");
+} else {
+    printf("Wrote %zd bytes to the file.\n", bytes_written);
+}
+
+close(fd);
+```
+
+---
+
+## Applications (Where It’s Used)
+- **File Writing:** Save content to files.  
+- **Logging Systems:** Append logs to a file using `O_APPEND`.  
+- **Inter-Process Communication (IPC):** Write data to pipes or FIFOs.  
+- **Network Programming:** Write data to sockets.  
+
+---
+
+## Key Takeaways
+- **`write()`** is essential for low-level I/O in Unix-like systems.  
+- Always check the **return value** to handle errors or partial writes.  
+- Combine with **`O_APPEND`** for safe appending to files.
