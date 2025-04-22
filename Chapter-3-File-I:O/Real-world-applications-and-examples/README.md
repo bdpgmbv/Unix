@@ -522,4 +522,4 @@ close(fd);
 - Always check the **return value** to ensure the operation succeeded.  
 - Use **`O_APPEND`** to always add data to the end of the file.  
 
-This is how you save data to a file in C! 🚀
+This is how you save data to a file in C!
