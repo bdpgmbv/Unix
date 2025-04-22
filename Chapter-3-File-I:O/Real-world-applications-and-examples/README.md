@@ -219,3 +219,77 @@ int file_fd = openat(dir_fd, "user_data.txt", O_RDONLY);
 - **`openat()`** → Safer, avoids race conditions, better for security.  
 
 **Always use `openat()` when security matters!**
+
+
+# Section 3.4 - Section 3.5: `creat()` and `close()` Functions
+
+## 1. `creat()` - Create a New File
+
+### What it does?
+- **Creates a new file** (or overwrites an existing one).  
+- Opens it for **writing only** (you can’t read from it).
+
+### How to use it?
+```c
+#include <fcntl.h>
+int fd = creat("newfile.txt", 0644); // 0644 = file permissions (read/write for owner, read for others)
+```
+- **Returns:** A file descriptor (`fd`) if successful, `-1` on error.
+
+### Why is it outdated?
+- `open()` can do the same thing but better:
+```c
+int fd = open("newfile.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+```
+- `creat()` is just a **legacy function** from old UNIX.
+
+---
+
+## 2. `close()` - Close an Open File
+
+### What it does?
+- Closes a file and **frees its file descriptor** for reuse.  
+- Releases **locks** on the file (important for multi-process programs).
+
+### How to use it?
+```c
+#include <unistd.h>
+int fd = open("file.txt", O_RDONLY);  
+// ... read/write operations ...
+close(fd); // Close the file when done!
+```
+- **Returns:** `0` on success, `-1` on error.
+
+### What happens if you don’t close?
+- The OS **automatically closes all open files** when a program exits.  
+- However, it’s **bad practice** to rely on this—always close files manually to avoid resource leaks.
+
+---
+
+## Applications (Where These Are Used)
+
+### File Creation:
+- **`creat()` (or `open()`)** → Used in programs that need to generate new files (e.g., compilers, loggers).
+
+### File Cleanup:
+- **`close()`** → Used in every program that opens files (editors, web servers, databases).
+
+### Temporary Files:
+#### Old way:
+```c
+int fd = creat("temp.txt", 0644);  
+close(fd);  
+fd = open("temp.txt", O_RDWR);  
+```
+
+#### Better way:
+```c
+int fd = open("temp.txt", O_RDWR | O_CREAT | O_TRUNC, 0644);  
+```
+
+---
+
+## Key Takeaways:
+- ✅ **`creat()`** → Old way to create and open a file (use `open()` instead today).  
+- ✅ **`close()`** → Always close files to free resources.  
+- ✅ Modern code should use `open()` with flags (`O_CREAT | O_TRUNC`) instead of `creat()`.
