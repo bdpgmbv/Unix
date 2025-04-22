@@ -268,3 +268,86 @@ int close(int fd);
 - **File Locking:** Closing a file releases any locks (important for concurrent access).
 
 These functions are fundamental for file lifecycle management in UNIX systems.
+
+
+# Section 3.6: `lseek` Function
+
+## Core Concept
+- Every open file has a **current file offset**, which tracks the read/write position (default: `0` at the start of the file).  
+- `lseek` explicitly sets this offset, enabling **random access** in files.
+
+---
+
+## Function Prototype
+```c
+#include <unistd.h>  
+off_t lseek(int fd, off_t offset, int whence);  
+```
+- **Returns:** New file offset on success, `-1` on error.
+
+---
+
+## `whence` Parameters
+- **`SEEK_SET`** → Set offset to `offset` bytes from the **start** of the file.  
+- **`SEEK_CUR`** → Adjust offset by `±offset` bytes from the **current position**.  
+- **`SEEK_END`** → Set offset to `offset` bytes from the **end** of the file.  
+
+---
+
+## Key Features
+
+### Determine Current Offset
+```c
+off_t pos = lseek(fd, 0, SEEK_CUR);  
+```
+- Returns the current file offset.  
+- **Returns `-1` (with `errno=ESPIPE`)** for non-seekable files (e.g., pipes, FIFOs, sockets).
+
+---
+
+### File Holes
+- **Holes** are unallocated disk space created by seeking beyond EOF and writing data.  
+- Reads in the hole return **zeros**, but storage isn’t used (saves disk space).  
+
+#### Example:
+```c
+write(fd, "abc", 3);       // Writes 3 bytes (offset=3).  
+lseek(fd, 16384, SEEK_SET); // Skips to offset 16384.  
+write(fd, "XYZ", 3);       // Writes 3 bytes (offset=16387).  
+```
+- File size: **16,387 bytes**, but only **6 bytes** consume disk blocks.
+
+---
+
+### Negative Offsets
+- Rarely allowed (device-dependent).  
+- For regular files, offsets must be **≥0**.
+
+---
+
+### 64-bit Support
+- `off_t` size varies (32-bit vs. 64-bit). Use `_FILE_OFFSET_BITS=64` for 64-bit offsets.  
+- Check system support via `sysconf` (e.g., `_SC_V7_LP64_OFF64`).
+
+---
+
+## Example Use Cases
+1. **Random Access:** Read/write at arbitrary positions.  
+2. **Append Data:** Use `lseek(fd, 0, SEEK_END)` to write at EOF.  
+3. **Detect Seekability:** Test if FD supports `lseek` (e.g., stdin in a pipeline fails).
+
+---
+
+## Platform Notes
+- **Solaris:** `off_t` is **8 bytes** by default (64-bit).  
+- **Legacy Systems:** Hardcoded values for `whence`:
+  - `0` → `SEEK_SET`  
+  - `1` → `SEEK_CUR`  
+  - `2` → `SEEK_END`  
+
+---
+
+## Key Takeaway
+- `lseek` enables **efficient file manipulation** (holes, random access).  
+- It is critical for handling **large files (>2GB)** via 64-bit offsets.  
+- Always check for **seekability** and use modern constants (`SEEK_*`) for portability.
