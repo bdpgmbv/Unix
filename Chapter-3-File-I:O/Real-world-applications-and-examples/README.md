@@ -293,3 +293,85 @@ int fd = open("temp.txt", O_RDWR | O_CREAT | O_TRUNC, 0644);
 - ✅ **`creat()`** → Old way to create and open a file (use `open()` instead today).  
 - ✅ **`close()`** → Always close files to free resources.  
 - ✅ Modern code should use `open()` with flags (`O_CREAT | O_TRUNC`) instead of `creat()`.
+
+# Section 3.6: `lseek()` Function
+
+## 1. What is `lseek()`?
+- Every open file has a **current position** (like a cursor in a text file).  
+- `lseek()` moves this position to **read/write** at different places in the file.
+
+---
+
+## 2. How to Use `lseek()`?
+```c
+#include <unistd.h>  
+off_t new_pos = lseek(int fd, off_t offset, int whence);  
+```
+
+### Parameters:
+- **`fd`** → File descriptor (from `open()`).  
+- **`offset`** → How many bytes to move.  
+- **`whence`** → Where to start moving:  
+  - **`SEEK_SET`** → Start from beginning of file.  
+  - **`SEEK_CUR`** → Start from current position.  
+  - **`SEEK_END`** → Start from end of file.  
+
+---
+
+## 3. Examples
+
+### Jump to byte 100:
+```c
+lseek(fd, 100, SEEK_SET);  
+```
+
+### Move 50 bytes forward from current position:
+```c
+lseek(fd, 50, SEEK_CUR);  
+```
+
+### Go to 10 bytes before the end:
+```c
+lseek(fd, -10, SEEK_END);  
+```
+
+### Find current position:
+```c
+off_t pos = lseek(fd, 0, SEEK_CUR);  
+```
+
+---
+
+## 4. Applications (Where It’s Used)
+
+### Reading/Writing at Specific Positions
+- **Databases** → Jump to a record.  
+- **Video Players** → Skip to a timestamp.  
+
+### Creating Sparse Files (Files with Holes)
+**Example:**
+```c
+write(fd, "start", 5);  
+lseek(fd, 1000, SEEK_CUR); // Skip 1000 bytes  
+write(fd, "end", 3);  
+```
+- Saves disk space → **Holes** (unwritten parts) aren’t stored physically.  
+
+### Checking if a File Supports Seeking
+- Pipes, sockets, and FIFOs can’t seek → `lseek()` returns `-1`.
+
+---
+
+## 5. Important Notes
+- ✅ Works on regular files, but **not pipes/sockets**.  
+- ✅ Negative offsets allowed (but rare).  
+- ✅ Can seek past file end → Next `write()` extends the file.  
+- ✅ **Holes in files** → Unwritten bytes read as `0` but take no disk space.
+
+---
+
+## Key Takeaways
+- **`lseek()`** → Moves the file’s read/write position.  
+- Used for **random access** (like skipping parts of a file).  
+- Helps create **space-efficient sparse files**.  
+- Essential for databases, media players, and file utilities.
