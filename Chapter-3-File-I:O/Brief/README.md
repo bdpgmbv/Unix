@@ -504,3 +504,46 @@ close(fd);
 - **`write()`** is essential for low-level I/O in Unix-like systems.  
 - Always check the **return value** to handle errors or partial writes.  
 - Combine with **`O_APPEND`** for safe appending to files.
+
+
+# Section 3.9: I/O Efficiency (File Copy Example)
+
+## Program Overview
+- **Purpose:** Copies data from **stdin** → **stdout** using `read()` and `write()`.  
+- **Buffering:** Uses a fixed buffer size (`BUFFSIZE`) for reading and writing.  
+- **File Handling:**  
+  - Relies on **shell redirection** for input/output files (e.g., `./prog < input.txt > output.txt`).  
+  - No explicit file closing—kernel handles descriptor closure on process exit.  
+- **File Types:** Works for both **text and binary files** (UNIX treats them the same).  
+
+---
+
+## Key Observations
+
+### 1. Buffer Size (`BUFFSIZE`) Impact
+- **Optimal Performance:** Achieved when buffer size matches the file system's **block size** (e.g., `4096 bytes`).  
+- **Large Buffers:** Larger than the block size show **diminishing returns**.  
+- **Small Buffers:** Even small buffers (e.g., `32 bytes`) perform well due to **read-ahead optimization** (kernel prefetches data).
+
+---
+
+### 2. Caching Effects
+- **Disk vs. RAM:** Performance improves after the first run because subsequent reads may come from the **RAM cache** (instead of disk).  
+- **Testing Accuracy:** Benchmarks avoided caching by using **different file copies** for each test.
+
+---
+
+### 3. System Considerations
+- **Filesystem Block Size:**  
+  - On **ext4 (Linux)**, block size directly affects I/O efficiency.  
+  - Larger block sizes favor larger buffers.  
+- **Synchronous Writes:** Compared with **`stdio` buffering**, discussed in later sections (e.g., 3.14, 5.8).
+
+---
+
+## Takeaways
+1. **Buffer Size Matters:** Efficient I/O requires tuning the buffer size to match the **filesystem block size**.  
+2. **Avoid Caching Bias:** Isolate tests to avoid skewed benchmarks from **RAM caching**.  
+3. **Simplified File Handling:** Shell redirection eliminates the need for explicit `open()` and `close()`.  
+
+> *(Note: "incore" refers to in-memory operations, a term originating from ferrite-core memory systems.)*
