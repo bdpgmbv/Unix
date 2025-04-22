@@ -523,3 +523,64 @@ close(fd);
 - Use **`O_APPEND`** to always add data to the end of the file.  
 
 This is how you save data to a file in C!
+
+# Section 3.9: I/O Efficiency
+
+This program copies data from **input** (like a file or keyboard) to **output** (like a file or screen).
+
+---
+
+## How It Works:
+1. It reads data in **chunks (blocks)** using `read()`.  
+2. **`BUFFSIZE`** decides how much data to read at once (e.g., `4096 bytes`).  
+3. It writes the same data using `write()`.  
+4. It keeps repeating until there’s no more data (`read()` returns `0`).  
+5. If there’s an error, it stops and shows a message.  
+
+---
+
+## Important Points:
+
+### ✔ Uses Shell Redirection
+- The program **doesn’t open files itself**.  
+- Instead, it reads from **standard input (`STDIN_FILENO`)** and writes to **standard output (`STDOUT_FILENO`)**.  
+- The shell (command line) handles redirection, e.g.,  
+  ```bash
+  ./program < input.txt > output.txt
+  ```
+
+---
+
+### ✔ No Need to Close Files
+- The system **automatically closes all open files** when the program ends.
+
+---
+
+### ✔ Works for Text & Binary Files
+- **UNIX treats all files the same,** so it works for both text and binary files.
+
+---
+
+## Why Does `BUFFSIZE` Matter?
+
+- Reading data in **small chunks** (e.g., `32 bytes`) is slow because it makes **many system calls**.  
+- Reading in **bigger chunks** (e.g., `4096 bytes`) is faster because:  
+  1. The system **reads ahead** (loads extra data in memory for future use).  
+  2. It matches the **file system’s block size** (e.g., `4096 bytes` on Linux).  
+- **Too large buffers** (e.g., `1MB`) don’t help much.
+
+---
+
+## Testing Performance:
+1. The **first run** is slower because the file is read from **disk**.  
+2. **Later runs** are faster because the file is **cached in memory**.  
+3. To test fairly, each test used a **different file copy** to avoid cache effects.
+
+---
+
+## Simple Summary:
+- **Read big chunks** (like `4096 bytes`) for better speed.  
+- Let the **shell handle file redirection** (`< input > output`).  
+- The system **caches files**, so repeated runs are faster.  
+
+🚀 This is how you efficiently copy files in C!
