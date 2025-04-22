@@ -142,3 +142,80 @@ int file_fd = openat(dir_fd, "file.txt", O_RDWR);
 - **`openat()`** → Safer for threads and security.  
 - **Used Everywhere** → Editors, shells, servers, and more.  
 - **Options Control** → Read/write, create, append, etc.
+
+# (Vyshali's Section) TOCTTOU in `open()` vs `openat()` (With Examples)
+
+## What is TOCTTOU?
+**TOCTTOU** (Time-of-Check to Time-of-Use) is a security bug where:
+1. A program **checks** a file (e.g., for permissions or existence).  
+2. Before the program **uses** the file, an attacker **changes** it.  
+
+This leads to the program acting on the **wrong file**, causing crashes or security risks.
+
+---
+
+## 🔴 `open()` is Vulnerable to TOCTTOU
+
+### Example: A Privileged Program Backing Up a File
+Suppose a backup tool does this:
+```c
+// Check if the file exists
+if (file_exists("/tmp/user_data.txt")) {
+    // Open the file
+    int fd = open("/tmp/user_data.txt", O_RDONLY);
+}
+```
+
+### 💥 Attack:
+1. After the **check**, an attacker replaces `user_data.txt` with a **symlink** to `/etc/passwd`.  
+2. When the program opens the file, it ends up reading sensitive system files like `/etc/passwd`.
+
+### Why?
+- `open()` uses **absolute paths**, so if the file changes between the check and open, the program is fooled.
+
+---
+
+## ✅ `openat()` Fixes TOCTTOU
+
+### Example: Safe File Access with `openat()`
+Instead of checking and opening separately:
+
+1. **Open the directory first (lock it down):**
+```c
+int dir_fd = open("/tmp", O_RDONLY | O_DIRECTORY);
+```
+
+2. **Open the file inside that directory (atomically):**
+```c
+int file_fd = openat(dir_fd, "user_data.txt", O_RDONLY);
+```
+
+### ✅ Why This is Safe:
+- The file is opened **relative to `/tmp`**, so even if an attacker changes `/tmp/user_data.txt`, the program still accesses the **original file**.  
+- There is **no time gap** between checking and opening → **No TOCTTOU**!
+
+---
+
+## Key Differences
+
+| Feature           | `open()`                                   | `openat()`                              |
+|--------------------|--------------------------------------------|-----------------------------------------|
+| **Path Handling**  | Uses full path (e.g., `/tmp/file.txt`)      | Uses a directory file descriptor + relative path |
+| **TOCTTOU Risk**   | Vulnerable (file can change after check)   | Safe (no race condition)                |
+| **Thread Safety**  | Bad (all threads share working directory)  | Good (each thread can have its own dir) |
+| **Use Case**       | Simple file access                        | Secure/safe file operations             |
+
+---
+
+## When to Use Which?
+
+- **Use `open()`** → For simple scripts or non-security-critical tasks.  
+- **Use `openat()`** → For security-sensitive programs (e.g., `sudo`, backup tools, servers).
+
+---
+
+## Final Summary
+- **`open()`** → Fast but risky (**TOCTTOU possible**).  
+- **`openat()`** → Safer, avoids race conditions, better for security.  
+
+**Always use `openat()` when security matters!**
