@@ -79,3 +79,66 @@ close(fd);                              // Close the file
 
 ## Summary
 These five functions (**open, read, write, lseek, close**) are the basic tools for file operations in UNIX. They are fast (no extra buffering) and are used in many programs that work with files.
+
+# Simple Explanation of `open()` and `openat()` Functions
+
+## 1. What Do `open()` and `openat()` Do?
+These functions open or create files in UNIX. They return a **file descriptor** (a number) that the program uses to read/write the file.
+
+- **`open()`** → Opens a file at a given path (e.g., `open("file.txt", O_RDWR)`).  
+- **`openat()`** → Opens a file relative to a directory (useful for threads & security).  
+
+---
+
+## 2. How They Are Used in Programs
+```c
+#include <fcntl.h>  
+
+// Open a file for reading  
+int fd = open("example.txt", O_RDONLY);  
+
+// Open (or create) a file for writing  
+int fd2 = open("newfile.txt", O_WRONLY | O_CREAT, 0644);  
+
+// Open a file relative to a directory (using openat)  
+int dir_fd = open("/some/directory", O_RDONLY);  
+int file_fd = openat(dir_fd, "file.txt", O_RDWR);  
+```
+
+### Common Flags:
+- **`O_RDONLY`** → Open for reading only.  
+- **`O_WRONLY`** → Open for writing only.  
+- **`O_RDWR`** → Open for both reading and writing.  
+- **`O_CREAT`** → Create the file if it doesn’t exist (needs file permissions like `0644`).  
+- **`O_APPEND`** → Always write at the end of the file (good for logs).  
+- **`O_TRUNC`** → Delete all data in the file if it already exists.  
+
+---
+
+## 3. Why Use `openat()`?
+- **Thread Safety** → Different threads can work in different directories.  
+- **Security** → Avoids race conditions (**TOCTTOU attacks**) where a file changes between checks.  
+- **Relative Paths** → Opens files inside a directory without needing full paths.  
+
+---
+
+## 4. Applications (Where These Are Used)
+- **Text Editors** → Open, modify, and save files.  
+- **Shell Commands** (`cat`, `echo`, `grep`) → Read/write files.  
+- **Servers & Databases** → Open many files safely.  
+- **Logging Systems** → Use `O_APPEND` to safely add logs.  
+
+---
+
+## 5. Important Notes
+- **File Descriptors** → The smallest available number is given (e.g., if `0` (stdin) is closed, `open()` might return `0`).  
+- **Errors** → If the file doesn’t exist, `open()` returns `-1` (check with `errno`).  
+- **Filename Limits** → Some old systems truncate long names, but modern systems give an error (`ENAMETOOLONG`).  
+
+---
+
+## Summary
+- **`open()`** → Basic way to open files.  
+- **`openat()`** → Safer for threads and security.  
+- **Used Everywhere** → Editors, shells, servers, and more.  
+- **Options Control** → Read/write, create, append, etc.
