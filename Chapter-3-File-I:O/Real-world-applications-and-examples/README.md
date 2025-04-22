@@ -80,7 +80,7 @@ close(fd);                              // Close the file
 ## Summary
 These five functions (**open, read, write, lseek, close**) are the basic tools for file operations in UNIX. They are fast (no extra buffering) and are used in many programs that work with files.
 
-# Simple Explanation of `open()` and `openat()` Functions
+# Section 3.3 `open()` and `openat()` Functions
 
 ## 1. What Do `open()` and `openat()` Do?
 These functions open or create files in UNIX. They return a **file descriptor** (a number) that the program uses to read/write the file.
