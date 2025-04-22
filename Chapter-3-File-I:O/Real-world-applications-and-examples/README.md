@@ -290,9 +290,9 @@ int fd = open("temp.txt", O_RDWR | O_CREAT | O_TRUNC, 0644);
 ---
 
 ## Key Takeaways:
-- ✅ **`creat()`** → Old way to create and open a file (use `open()` instead today).  
-- ✅ **`close()`** → Always close files to free resources.  
-- ✅ Modern code should use `open()` with flags (`O_CREAT | O_TRUNC`) instead of `creat()`.
+-  **`creat()`** → Old way to create and open a file (use `open()` instead today).  
+-  **`close()`** → Always close files to free resources.  
+-  Modern code should use `open()` with flags (`O_CREAT | O_TRUNC`) instead of `creat()`.
 
 # Section 3.6: `lseek()` Function
 
@@ -363,10 +363,10 @@ write(fd, "end", 3);
 ---
 
 ## 5. Important Notes
-- ✅ Works on regular files, but **not pipes/sockets**.  
-- ✅ Negative offsets allowed (but rare).  
-- ✅ Can seek past file end → Next `write()` extends the file.  
-- ✅ **Holes in files** → Unwritten bytes read as `0` but take no disk space.
+-  Works on regular files, but **not pipes/sockets**.  
+-  Negative offsets allowed (but rare).  
+-  Can seek past file end → Next `write()` extends the file.  
+-  **Holes in files** → Unwritten bytes read as `0` but take no disk space.
 
 ---
 
@@ -404,10 +404,10 @@ ssize_t bytes_read = read(fd, buffer, sizeof(buffer));
 
 ## 3. Key Behaviors
 
-- ✅ **Regular Files** → Reads up to `nbytes` (stops at end-of-file).  
-- ✅ **Terminals** (keyboard input) → Reads **1 line** at a time by default.  
-- ✅ **Pipes/Network** → May return **fewer bytes** than requested (due to buffering).  
-- ✅ **Error Handling** → Returns `-1` if interrupted (e.g., by a signal).  
+-  **Regular Files** → Reads up to `nbytes` (stops at end-of-file).  
+-  **Terminals** (keyboard input) → Reads **1 line** at a time by default.  
+-  **Pipes/Network** → May return **fewer bytes** than requested (due to buffering).  
+-  **Error Handling** → Returns `-1` if interrupted (e.g., by a signal).  
 
 ---
 
