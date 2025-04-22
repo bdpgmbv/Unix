@@ -33,5 +33,49 @@ These functions are used in many programs, such as:
 
 ---
 
+# Section 3.2 File Descriptors in UNIX
+
+## 1. What is a File Descriptor?
+- A file descriptor is just a number (like 0, 1, 2, 3, ...) that the UNIX kernel uses to keep track of open files.  
+- When a program opens a file, the kernel gives it a file descriptor (like a ticket number).  
+- The program uses this number to read, write, or close the file.
+
+---
+
+## 2. How It Is Used in Programs
+
+### Example:
+```c
+int fd = open("example.txt", O_RDONLY); // Open file, get descriptor (e.g., 3)
+read(fd, buffer, 100);                  // Read 100 bytes using descriptor 3
+close(fd);                              // Close the file
+```
+
+### Standard File Descriptors (Always Open):
+- **0 (STDIN_FILENO)** → Input (like keyboard).  
+- **1 (STDOUT_FILENO)** → Output (like screen).  
+- **2 (STDERR_FILENO)** → Error messages (also screen).  
+
+---
+
+## 3. Applications (Where File Descriptors Are Used)
+- **Shell Commands** (e.g., `cat`, `grep`, `echo`) → Use 0 (input), 1 (output), 2 (error).  
+- **Servers & Databases** → Handle many open files (sockets, logs, data files).  
+- **Pipes & Redirections** (e.g., `ls > files.txt`) → Change where 1 (stdout) goes.  
+
+---
+
+## 4. Important Notes
+- **Numbers vs. Names** → It’s better to use `STDIN_FILENO` instead of `0` for readability.  
+- **Limits** → Older UNIX allowed only ~20 open files, but modern systems allow much more (depends on system memory).  
+
+---
+
+## Summary
+- File descriptors are numbers representing open files.  
+- **0, 1, 2** are special (stdin, stdout, stderr).  
+- Programs use them to read/write files without needing filenames every time.  
+- File descriptors are used in almost every UNIX program (shells, servers, scripts).
+
 ## Summary
 These five functions (**open, read, write, lseek, close**) are the basic tools for file operations in UNIX. They are fast (no extra buffering) and are used in many programs that work with files.
