@@ -154,7 +154,7 @@ This leads to the program acting on the **wrong file**, causing crashes or secur
 
 ---
 
-## 🔴 `open()` is Vulnerable to TOCTTOU
+## `open()` is Vulnerable to TOCTTOU
 
 ### Example: A Privileged Program Backing Up a File
 Suppose a backup tool does this:
@@ -166,7 +166,7 @@ if (file_exists("/tmp/user_data.txt")) {
 }
 ```
 
-### 💥 Attack:
+### Attack:
 1. After the **check**, an attacker replaces `user_data.txt` with a **symlink** to `/etc/passwd`.  
 2. When the program opens the file, it ends up reading sensitive system files like `/etc/passwd`.
 
@@ -175,7 +175,7 @@ if (file_exists("/tmp/user_data.txt")) {
 
 ---
 
-## ✅ `openat()` Fixes TOCTTOU
+## `openat()` Fixes TOCTTOU
 
 ### Example: Safe File Access with `openat()`
 Instead of checking and opening separately:
@@ -190,7 +190,7 @@ int dir_fd = open("/tmp", O_RDONLY | O_DIRECTORY);
 int file_fd = openat(dir_fd, "user_data.txt", O_RDONLY);
 ```
 
-### ✅ Why This is Safe:
+### Why This is Safe:
 - The file is opened **relative to `/tmp`**, so even if an attacker changes `/tmp/user_data.txt`, the program still accesses the **original file**.  
 - There is **no time gap** between checking and opening → **No TOCTTOU**!
 
