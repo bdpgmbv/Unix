@@ -438,9 +438,9 @@ close(fd);
 
 ## 6. Important Notes
 
-- ⚠ **Partial Reads** → Always check `bytes_read` (could be less than `nbytes`).  
-- ⚠ **Blocking vs. Non-blocking** → By default, `read()` waits for data (unless `O_NONBLOCK` is set).  
-- ⚠ **Thread Safety** → Concurrent `read()` calls on the same file may cause race conditions.  
+-  **Partial Reads** → Always check `bytes_read` (could be less than `nbytes`).  
+-  **Blocking vs. Non-blocking** → By default, `read()` waits for data (unless `O_NONBLOCK` is set).  
+-  **Thread Safety** → Concurrent `read()` calls on the same file may cause race conditions.  
 
 ---
 
