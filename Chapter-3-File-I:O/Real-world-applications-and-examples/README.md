@@ -448,3 +448,78 @@ close(fd);
 - **`read()`** → Gets data from files/devices into memory.  
 - Used in almost all programs that process files/input.  
 - Always check the **return value** to handle errors and partial reads.
+
+
+# Section 3.8 - `write` Function
+
+## What Does `write` Do?
+The `write` function is used to **save (write) data** into an open file.
+
+---
+
+## Basic Syntax
+```c
+ssize_t write(int fd, const void *buf, size_t nbytes);
+```
+
+### Parameters:
+1. **`fd`** → The file descriptor (a number representing the open file).  
+2. **`buf`** → The data to write (e.g., text or numbers).  
+3. **`nbytes`** → Number of bytes (letters/numbers) to write.  
+
+---
+
+## Return Value
+- **If successful:** Returns the **number of bytes written**.  
+- **If it fails:** Returns `-1` (check `errno` for the error).  
+
+---
+
+## Common Errors
+1. **Disk is full** → No space left to save the data.  
+2. **File is too big** → Writing exceeds the file size limit for the process.  
+
+---
+
+## How Writing Works
+1. Writing **starts at the current position** in the file.  
+2. If the file was opened with **`O_APPEND`**, new data is **always added to the end** of the file.  
+3. After writing, the file’s position advances by the number of bytes written.  
+
+---
+
+## Example: Writing to a File
+```c
+#include <unistd.h>
+#include <fcntl.h>
+
+int fd = open("example.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+if (fd == -1) {
+    perror("open failed");
+    return 1;
+}
+
+const char *data = "Hello";
+ssize_t bytes_written = write(fd, data, 5); // Write "Hello" (5 bytes).
+
+if (bytes_written == -1) {
+    perror("write failed");
+} else {
+    printf("Wrote %zd bytes to the file.\n", bytes_written);
+}
+
+close(fd);
+```
+### What Happens in the Example:
+- It saves `"Hello"` where the file’s pointer is.  
+- The pointer moves forward by 5 bytes.  
+- If there’s an error (e.g., disk full), it returns `-1`.  
+
+---
+
+## Key Takeaways
+- **`write`** saves data into files and moves the file pointer forward.  
+- Always check the **return value** to ensure the operation succeeded.  
+- Use **`O_APPEND`** to always add data to the end of the file.  
+
+This is how you save data to a file in C! 🚀
