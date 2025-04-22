@@ -216,3 +216,55 @@ int file_fd = openat(dir_fd, "user_data.txt", O_RDONLY);
 - **`openat()`** → Safer, avoids race conditions, better for security.  
 
 **Always use `openat()` when security matters!**
+
+
+# Sections 3.4: `creat` and 3.5: `close` Functions
+
+## 3.4 `creat` Function
+```c
+#include <fcntl.h>  
+int creat(const char *path, mode_t mode);  
+```
+
+### Purpose:
+- Creates a new file (obsolete, but still exists for backward compatibility).
+
+### Equivalent to:
+```c
+open(path, O_WRONLY | O_CREAT | O_TRUNC, mode);  
+```
+
+### Limitations:
+- Opens the file as **write-only** → Cannot read after creation without reopening it.
+- Modern code should use `open()` with `O_RDWR | O_CREAT | O_TRUNC` for **read-write access**.
+
+### Historical Context:
+- In early UNIX, `creat` was needed because `open()` lacked `O_CREAT` and `O_TRUNC` flags.
+
+---
+
+## 3.5 `close` Function
+```c
+#include <unistd.h>  
+int close(int fd);  
+```
+
+### Purpose:
+- Closes an open file descriptor.
+
+### Behavior:
+- **Releases file locks** held by the process.
+- **Frees kernel resources** associated with the file descriptor.
+
+### Automatic Closure:
+- All open files are automatically closed when a process terminates (handled by the kernel).
+- Explicitly closing files is still recommended to prevent resource leaks, especially in long-running programs.
+
+---
+
+## Key Takeaways:
+- **Avoid `creat`:** Use `open()` with appropriate flags for better flexibility.
+- **Always close file descriptors:** While the kernel handles cleanup on process exit, explicit closure prevents leaks in long-running programs.
+- **File Locking:** Closing a file releases any locks (important for concurrent access).
+
+These functions are fundamental for file lifecycle management in UNIX systems.
