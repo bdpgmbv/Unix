@@ -735,3 +735,109 @@ fd = open(path, O_WRONLY | O_CREAT | O_EXCL, mode);  // Fails if file exists.
 
 ### Rule of Thumb:
 Always use **atomic operations** when shared file access is possible!
+
+
+# Section 3.12: `dup` and `dup2` Functions: Duplicating File Descriptors
+
+## Purpose
+- Duplicate an existing **file descriptor (fd)** to create a new one that refers to the **same file table entry**.  
+- Commonly used for **redirecting I/O** (e.g., making `stdout` write to a file).
+
+---
+
+## Functions
+```c
+#include <unistd.h>  
+int dup(int fd);          // Returns lowest available fd  
+int dup2(int fd, int fd2); // Forces fd2 to be a copy of fd  
+```
+- **Returns:** New file descriptor (or `-1` on error).
+
+---
+
+## Key Behaviors
+
+### 1. `dup(int fd)`
+- Returns the **lowest unused fd** (e.g., if `fd=1` (stdout), `dup(1)` might return `3`).  
+- Shares the **same file table entry** (same offset, same open file).  
+
+#### Example:
+```c
+int newfd = dup(1);  // Assume newfd = 3 (points to stdout)
+write(newfd, "Hello", 5);  // Prints "Hello" to stdout!
+```
+
+---
+
+### 2. `dup2(int fd, int fd2)`
+- Makes `fd2` a copy of `fd` (closes `fd2` first if open).  
+- If `fd == fd2`, simply returns `fd2` without closing it.  
+- **Atomic:** Safer than `close` + `fcntl`.
+
+#### Example: Redirect stdout to a file
+```c
+int fd = open("log.txt", O_WRONLY);  
+dup2(fd, 1);  // Now fd=1 (stdout) writes to "log.txt"
+printf("This goes to log.txt!\n");  
+```
+
+---
+
+## Key Differences vs `fcntl(F_DUPFD)`
+
+| **Feature**           | **dup/dup2**      | **fcntl(F_DUPFD)** |
+|------------------------|-------------------|--------------------|
+| **Atomic?**           | Yes (`dup2`)   | No (race risk)  |
+| **Closes `fd2`?**     | Yes (`dup2`)   |  No (must close manually) |
+| **Error Handling**    | Simpler           | More flexible      |
+
+---
+
+## Why `dup2` is Preferred
+1. **Atomicity:** No risk of race conditions (e.g., signals interrupting `close` + `fcntl`).  
+2. **Predictable:** Guarantees `fd2` is reused.  
+
+---
+
+## Shared File Table Entry Implications
+- **Same offset:** Writing via one fd advances the offset for all duplicates.
+```c
+int fd1 = open("file.txt", O_RDWR);  
+int fd2 = dup(fd1);  
+write(fd1, "123", 3);  
+write(fd2, "456", 3);  // Appends after "123" (shared offset)  
+// File content: "123456"
+```
+
+- **Same status flags:** If `fd1` was opened with `O_APPEND`, `fd2` inherits it.
+
+---
+
+## When to Use?
+
+### 1. **I/O Redirection**
+- Shells use `dup2` for pipes (e.g., `cmd1 | cmd2`).
+
+### 2. **Reopening FDs Safely**
+- Ensure a backup of `stdin`/`stdout` before redirecting.
+
+### 3. **Avoiding Race Conditions**
+- Use `dup2` instead of manual `close` + `fcntl`.
+
+---
+
+## Summary
+- **`dup`:** Simplest way to clone an fd (uses the lowest available fd).  
+- **`dup2`:** Forces a specific fd number (**atomic and safe**).  
+- Both share the **same underlying file state** (offset, flags).  
+
+#### Use `dup2` for robust redirection (e.g., in shells, daemons).
+
+---
+
+### 🔍 Try It: Redirect stderr to a file using `dup2`!
+```c
+int fd = open("errors.log", O_WRONLY);  
+dup2(fd, 2);  // Now stderr (fd=2) writes to "errors.log" 
+perror("An error occurred!");  // This message goes into "errors.log"
+```
