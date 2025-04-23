@@ -966,3 +966,290 @@ printf("This will go to output.txt!\n");
 ---
 
 **`dup` and `dup2`** make managing file descriptors safe and efficient!
+
+
+# Section 3.13: `sync`, `fsync`, and `fdatasync` Functions
+
+---
+
+## Why Do We Need These Functions?
+- When you write data to a file, the data doesn’t go to the disk immediately—it stays in the kernel’s **buffer cache** for efficiency.  
+- **Problem:** If the computer crashes, you might lose data that hasn’t been written to disk yet.  
+- **Solution:** Use `sync`, `fsync`, or `fdatasync` to force data to be written to disk.
+
+---
+
+## 1. **`sync()` – Flush All Buffers to Disk**
+### What it does:
+- Tells the OS to **write all pending changes** (from all files) to disk.  
+- **Does NOT wait** for the writes to finish—just schedules them.  
+
+### When is it used?
+- Automatically called **every 30 seconds** by the system (update daemon).  
+- Can also be triggered manually using the `$ sync` command in the terminal.
+
+---
+
+## 2. **`fsync(fd)` – Force One File to Disk (and Wait)**
+### What it does:
+- Takes a **file descriptor (fd)** and writes all its **data + metadata** (like file size/time) to disk.  
+- **Waits** until the disk confirms the write is done.  
+
+### When is it used?
+- Critical apps like **databases** or **financial systems** that cannot afford data loss.
+
+### Example:
+```c
+write(fd, data, size);  // Data is in memory (unsafe if crash happens)  
+fsync(fd);              // Now data is safely on disk!  
+```
+
+---
+
+## 3. **`fdatasync(fd)` – Faster Version of `fsync` (Data Only)**
+### What it does:
+- Like `fsync`, but only forces the file’s **data** (not metadata) to disk.  
+- Faster, because metadata updates (e.g., file timestamps) can be slow.  
+
+### When is it used?
+- For use cases where you only care about the **file’s content**, not its attributes (e.g., log files).
+
+### Example:
+- Writing logs where file size or timestamp consistency doesn’t matter.
+
+---
+
+## Key Differences
+
+| **Function**   | **What It Does**                     | **Waits?** | **Scope**         |
+|-----------------|--------------------------------------|------------|-------------------|
+| **`sync()`**    | Schedules all pending writes         | No       | All files         |
+| **`fsync(fd)`** | Forces one file’s data + metadata    | Yes      | Single file       |
+| **`fdatasync`** | Forces one file’s data only          | Yes      | Single file       |
+
+---
+
+## When Should You Use Them?
+
+- **`fsync`** → Critical writes (e.g., **databases**, **financial transactions**).  
+- **`fdatasync`** → Faster writes when **metadata isn’t important** (e.g., logs).  
+- **`sync`** → Rarely needed manually (the system handles it automatically).  
+
+---
+
+These functions make sure your data is **safe on disk**!
+
+**Note:** Not all systems support `fdatasync`—check your OS compatibility.
+
+# Section 3.14: `fcntl` Function
+
+---
+
+## What is `fcntl`?
+- Think of **`fcntl`** as a **remote control for open files**.  
+- It lets you change settings of an already-open **file descriptor (fd)**.
+
+---
+
+## What Can `fcntl` Do?
+
+### 1. **Copy File Descriptors (like `dup`/`dup2`)**
+- **`F_DUPFD:`** Makes a copy of `fd` (using the lowest free number).  
+- **`F_DUPFD_CLOEXEC:`** Copies `fd` and sets the "close-on-exec" flag.
+
+---
+
+### 2. **Get/Set File Descriptor Flags**
+- **`F_GETFD:`** Checks if "close-on-exec" is set (returns 1 or 0).  
+- **`F_SETFD:`** Turns "close-on-exec" **on/off**.
+
+---
+
+### 3. **Get/Set File Status Flags**
+- **`F_GETFL:`** Checks status flags like `O_APPEND`, `O_NONBLOCK`.  
+- **`F_SETFL:`** Changes status flags (e.g., adds `O_APPEND` to a file).
+
+---
+
+### 4. **Async I/O Control**
+- **`F_GETOWN/F_SETOWN:`** Sets which process receives I/O signals.  
+
+---
+
+### 5. **File Locking**
+*(Advanced, not covered here.)*
+
+---
+
+## Example Uses
+
+### 1. **Check File Access Mode**
+```c
+int flags = fcntl(fd, F_GETFL);  
+if (flags & O_RDONLY) printf("Read-only file");  
+```
+
+---
+
+### 2. **Add `O_APPEND` Flag**
+```c
+int flags = fcntl(fd, F_GETFL);  
+fcntl(fd, F_SETFL, flags | O_APPEND);  // Now writes go to the end!  
+```
+
+---
+
+### 3. **Make a File Non-Blocking**
+```c
+fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);  
+// Now read() won’t wait if no data is ready!  
+```
+
+---
+
+## Key Notes
+- ✔ **`fcntl` works on open files**—no need to reopen them.  
+- ✔ Flags like **`O_APPEND`** can be added/removed anytime.  
+- ✔ Safer than `dup`/`dup2` for some cases (e.g., atomic operations).  
+
+**`fcntl`** gives you control over files without reopening them!
+
+**Note:** Some flags like **`O_RDONLY`** can’t be changed after opening—use `open()` for those.
+
+
+# Section 3.15: `ioctl` Function
+
+---
+
+## What is `ioctl`?
+
+- **`ioctl`** stands for **input/output control**.  
+- It is a **special function** used in Unix-like systems to control **devices**.  
+
+### Key Idea:
+- `ioctl` is like a **"catch-all" tool**—if standard functions like `read` and `write` can’t do something, you use `ioctl` instead.  
+
+---
+
+## How is it Used?
+
+```c
+int ioctl(int fd, int request, ...);
+```
+
+- **`fd:`** File descriptor (e.g., for a file or device).  
+- **`request:`** A command telling `ioctl` what to do.  
+- **`...:`** Extra arguments (often a pointer to data).  
+
+---
+
+## Where is it Used?
+
+- **Mostly for terminal I/O** (keyboard, screen).  
+- Also used for:
+  - **Tapes**: Rewind, skip files.  
+  - **Disks**: Special operations.  
+  - **Sockets**: Advanced controls.  
+- Some systems even use it for **regular files**.
+
+---
+
+## Example Commands
+
+- **Tape drives:**  
+  Rewind, skip files, or write EOF marks.  
+
+- **Terminals:**  
+  Change window size or manage input modes.  
+
+- **Disks/Sockets:**  
+  Perform advanced or device-specific operations.
+
+---
+
+## Status Today
+
+- **Older but still widely used.**  
+- Some functions have been replaced by newer **POSIX functions**, especially for terminal I/O.  
+
+---
+
+## Summary
+
+- **`ioctl`** is a **flexible tool** for controlling devices when normal file operations aren’t enough.  
+- Useful for **special tasks** like managing terminals, tapes, or socket behavior.  
+
+---
+
+**Pro Tip:** Always include proper headers and handle errors when using `ioctl` in real code!
+
+
+# Section 3.16: `/dev/fd`
+
+---
+
+## What is `/dev/fd`?
+
+- **`/dev/fd`** is a special directory in Unix-like systems (Linux, macOS, FreeBSD, etc.).  
+- Inside, you'll find files named `0`, `1`, `2`, etc., which represent **open file descriptors**:  
+  - `0` = **stdin**  
+  - `1` = **stdout**  
+  - `2` = **stderr**
+
+---
+
+## How Does It Work?
+
+- Opening `/dev/fd/0` is the same as **duplicating file descriptor `0` (stdin)**.  
+
+### Example:
+```c
+fd = open("/dev/fd/0", O_RDONLY);  
+```
+- This works just like `dup(0)`.
+
+### Key Behavior:
+- Most systems **ignore the mode** (`O_RDONLY`, `O_RDWR`) and copy the original file’s permissions.  
+  - Example: If stdin (fd `0`) is read-only, you can’t write to `/dev/fd/0` even with `O_RDWR`.  
+
+---
+
+### **Linux is Different!**
+- On Linux, `/dev/fd/0` is a **symbolic link** to the actual file (e.g., `/proc/self/fd/0`).  
+- If you open `/dev/fd/0` with `O_RDWR`, it **reopens the real file**, so permissions may change.  
+
+**Warning:**  
+- Using `creat()` or `O_CREAT` on `/dev/fd` might **truncate (erase)** the file!
+
+---
+
+## Why is `/dev/fd` Useful?
+
+### 1. **For Shell Commands**
+- Normally, programs use `-` to mean **stdin/stdout** (e.g., `cat file1 - file2`).  
+- With `/dev/fd`, you can directly use `/dev/fd/0` (stdin) or `/dev/fd/1` (stdout).  
+
+#### Example:
+```sh
+cat file1 /dev/fd/0 file2  # Instead of "cat file1 - file2"
+```
+- **Advantage:** Cleaner commands—no confusion with `-` looking like an option.
+
+---
+
+### 2. **Other Shortcuts**
+- Some systems provide easier-to-read symlinks:  
+  - `/dev/stdin → /dev/fd/0`  
+  - `/dev/stdout → /dev/fd/1`  
+  - `/dev/stderr → /dev/fd/2`  
+
+---
+
+## Summary
+
+- `/dev/fd` lets you access **open files** by their **descriptor number**.  
+- **Primary Use:** Shell scripts treat stdin/stdout like regular files.  
+- **Linux Note:** Behaves differently (symbolic links)—be cautious with writes/creates.  
+- It makes commands **consistent** and avoids `-` hacks.  
+
+`/dev/fd` is a simple but powerful tool for managing file descriptors!
