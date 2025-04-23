@@ -638,3 +638,100 @@ The kernel uses three structures to manage open files across processes:
 
 - **`O_APPEND`** ensures **atomic writes**. Without it, processes may overwrite each other.  
 - **Shared file table entries** (via `dup()`/`fork()`) can affect offsets during file operations.
+
+
+# Section 3.11: Atomic Operations in UNIX: Ensuring Safe Concurrent File Access
+
+---
+
+## 1. Problem: Non-Atomic Appends (Race Condition)
+
+### Scenario:
+Two processes (A and B) attempt to append data to the same file **without `O_APPEND`**:
+
+```c
+lseek(fd, 0, SEEK_END);  // Move to end
+write(fd, buf, 100);     // Write data
+```
+
+### Race Condition:
+1. Process A calls `lseek` to move to EOF (offset = 1500), then gets preempted.  
+2. Process B calls `lseek` to move to EOF (still offset = 1500) and writes 100 bytes (new EOF = 1600).  
+3. Process A resumes and writes 100 bytes at its saved offset (1500), **overwriting Process B’s data**.
+
+---
+
+### Solution: `O_APPEND` Flag
+
+#### How it works:
+```c
+open("file.log", O_WRONLY | O_APPEND);  // Atomic seek+write
+```
+- The **kernel automatically sets `offset = EOF` before each `write()`**.
+- Guarantees **atomicity**: Ensures no interleaving between `lseek` and `write`.
+
+---
+
+## 2. Atomic Seek+I/O: `pread()` and `pwrite()`
+
+### Functions:
+```c
+ssize_t pread(int fd, void *buf, size_t n, off_t offset);  // Atomic read at offset
+ssize_t pwrite(int fd, const void *buf, size_t n, off_t offset);  // Atomic write at offset
+```
+
+### Key Features:
+1. **Atomic Seek+I/O:** Combines `seek` and `read`/`write` into one atomic step.  
+2. **No Race Conditions:** Prevents interference with the file offset.  
+3. Does **not** update the file offset (unlike `lseek` + `read`/`write`).
+
+---
+
+### Example:
+```c
+pwrite(fd, "Atomic!", 7, 100);  // Writes "Atomic!" at offset 100, no interference.
+```
+
+---
+
+## 3. Atomic File Creation: `O_EXCL`
+
+### Problem:
+Without atomic checks, `open()` + `creat()` risks **TOCTOU (Time-of-Check-to-Time-of-Use) races**:
+```c
+if (!file_exists) creat(path, mode);  // Another process may create it meanwhile!
+```
+
+---
+
+### Solution: Use `O_CREAT | O_EXCL`
+```c
+fd = open(path, O_WRONLY | O_CREAT | O_EXCL, mode);  // Fails if file exists.
+```
+- Ensures **atomic check-and-create**: The kernel guarantees no other process creates the file in the meantime.
+
+---
+
+## Why Atomicity Matters
+
+### 1. Log Files:
+- Multiple processes safely append data using **`O_APPEND`**.
+
+### 2. Database Writes:
+- Use **`pwrite()`** to avoid corrupting records during concurrent writes.
+
+### 3. Temporary Files:
+- Use **`O_EXCL`** to prevent accidental overwrites.
+
+---
+
+## Key Takeaways
+1. **Non-atomic operations** (`lseek` + `write`) are unsafe with concurrency.  
+2. **`O_APPEND`**: Ensures atomic appends.  
+3. **`pread/pwrite`**: Provides atomic I/O at fixed offsets.  
+4. **`O_EXCL`**: Guarantees atomic file creation (**no TOCTOU races**).  
+
+---
+
+### Rule of Thumb:
+Always use **atomic operations** when shared file access is possible!
