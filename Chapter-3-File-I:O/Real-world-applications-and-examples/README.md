@@ -898,8 +898,71 @@ open(path, O_CREAT | O_EXCL, mode);
 ---
 
 ## Simple Summary
-- ✅ Use **`O_APPEND`** → Safe appending.  
-- ✅ Use **`pread`/`pwrite`** → Safe reading/writing at fixed positions.  
-- ✅ Use **`O_CREAT | O_EXCL`** → Safe file creation.  
+- Use **`O_APPEND`** → Safe appending.  
+- Use **`pread`/`pwrite`** → Safe reading/writing at fixed positions.  
+- Use **`O_CREAT | O_EXCL`** → Safe file creation.  
 
-🚀 **Atomic operations** keep your file I/O safe and reliable!
+**Atomic operations** keep your file I/O safe and reliable!
+
+
+# Section 3.12: `dup` and `dup2` Functions
+
+## What Do They Do?
+- **`dup` and `dup2`** copy (duplicate) an existing **file descriptor (fd)**.  
+- The new descriptor points to the **same file/pipe/socket** as the original.
+
+---
+
+## Two Ways to Duplicate:
+### 1. **`dup(fd)`**
+- Creates a copy of the file descriptor and assigns it the **lowest available number**.  
+
+#### Example:
+```c
+int newfd = dup(1);  // If fd=1 (stdout), and 3 is free, newfd = 3.
+write(newfd, "Hello", 5);  // Writes "Hello" to stdout!
+```
+
+---
+
+### 2. **`dup2(fd, fd2)`**
+- Makes `fd2` a copy of `fd`.  
+- If `fd2` is already open, it **closes `fd2` first**.  
+
+#### Example:
+```c
+dup2(1, 5);  // fd=5 now points to stdout (fd=1).
+write(5, "Hello", 5);  // Writes "Hello" to stdout!
+```
+
+---
+
+## Key Points:
+- ✔ Both descriptors share the **same file position** and **status flags** (e.g., `O_APPEND`).  
+- ✔ Each descriptor has its **own file descriptor flags** (e.g., `close-on-exec`).  
+- ✔ **`dup2` is atomic**: Ensures no race conditions (safer than `close` + `fcntl`).  
+
+---
+
+## Why Use Them?
+1. **Redirect Output:** Redirect `stdout` or `stderr` to a file.  
+2. **Save/Restore FDs:** Temporarily change file descriptors and restore them later.  
+3. **Avoid Conflicts:** In multi-threaded or complex programs.
+
+---
+
+## Example Use Case: Redirecting Output
+```c
+int fd = open("output.txt", O_WRONLY);  
+dup2(fd, 1);  // Redirect stdout (fd=1) to "output.txt".
+printf("This will go to output.txt!\n");
+```
+
+---
+
+## Note:
+- `fcntl(fd, F_DUPFD, ...)` can also duplicate file descriptors, but **`dup2`** is simpler and atomic.
+
+---
+
+**`dup` and `dup2`** make managing file descriptors safe and efficient!
