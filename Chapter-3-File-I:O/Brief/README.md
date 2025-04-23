@@ -841,3 +841,412 @@ int fd = open("errors.log", O_WRONLY);
 dup2(fd, 2);  // Now stderr (fd=2) writes to "errors.log" 
 perror("An error occurred!");  // This message goes into "errors.log"
 ```
+
+
+# Section 3.13: `sync`, `fsync`, and `fdatasync`: Ensuring Data Persistence on Disk
+
+---
+
+## Purpose
+- Force **kernel buffer cache** → disk writes to prevent **data loss** if the system crashes.  
+- **Critical** for:
+  - Databases  
+  - Transactional logs  
+  - File integrity  
+
+---
+
+## Key Functions
+
+| **Function**     | **Behavior**                                      | **Use Case**                          |
+|-------------------|---------------------------------------------------|---------------------------------------|
+| **`sync()`**      | Queues all pending disk writes (**no waiting**).  | System-wide flush (e.g., `sync` command). |
+| **`fsync(fd)`**   | Forces writes for **one file** (**waits for disk**). | Databases (ensure commits are safe).  |
+| **`fdatasync(fd)`** | Like `fsync`, but skips metadata (e.g., timestamps). | Performance-critical data writes.    |
+
+---
+
+## 1. `sync()`
+- **Asynchronous:**  
+  - Schedules **all buffered writes** but does **not wait** for them to complete.  
+- Called **automatically** every 30 seconds (by the update daemon).  
+- **Command Line Example:**  
+  ```bash
+  $ sync  # Manually triggers a system-wide flush.
+  ```
+
+---
+
+## 2. `fsync(int fd)`
+- **Synchronous:**  
+  - Blocks until **data + metadata** (e.g., file size, timestamps) are safely written to disk.  
+
+### Example: Ensuring a database transaction is saved
+```c
+write(db_fd, transaction_data, size);  
+fsync(db_fd);  // Wait until disk confirms the write.
+```
+
+---
+
+## 3. `fdatasync(int fd)`
+- **Optimized `fsync`:**  
+  - Only flushes **file data**, skipping metadata (e.g., timestamps).  
+- **Faster** for apps that don’t need immediate metadata consistency (e.g., logs).  
+
+### Example: `fsync` vs `fdatasync`
+```c
+write(fd, "Payment: $100", 12);  
+fsync(fd);      // Ensures "Payment: $100" + file size/timestamp are saved.  
+fdatasync(fd);  // Only ensures "Payment: $100" is saved (faster).  
+```
+
+---
+
+## Why This Matters
+
+### 1. **Delayed Write Default**
+- The kernel buffers writes to improve performance.  
+- **Risk:** A crash before flushing = **data loss**.
+
+### 2. **Metadata Overhead**
+- `fsync` updates inodes (file metadata), while `fdatasync` **skips metadata** for better performance.
+
+---
+
+## Portability Note
+- **`fdatasync`** is **not supported** on FreeBSD 8.0.  
+- Use **`fsync`** as a fallback for better portability.
+
+---
+
+## When to Use?
+
+| **Scenario**                   | **Function**       |
+|---------------------------------|--------------------|
+| System-wide flush (e.g., before reboot) | **`sync()`**        |
+| Critical file writes (e.g., databases)  | **`fsync(fd)`**     |
+| High-speed data logging                | **`fdatasync(fd)`** |
+
+---
+
+## 💡 Rule of Thumb:
+- Use **`fsync`/`fdatasync`** after a write if you **cannot afford data loss**.
+
+---
+
+## Summary
+- **`sync:`** Flush all buffers (**fire-and-forget**).  
+- **`fsync:`** Guarantee a file’s **data + metadata** is written to disk.  
+- **`fdatasync:`** Like `fsync`, but **faster** (skips metadata).  
+
+---
+
+### Tradeoff: Safety (`fsync`) vs Speed (`fdatasync`)
+
+**Key Takeaway:** If your app handles money or critical data, always use **`fsync`**!
+
+
+# Section 3.14: `fcntl` Function: Controlling Open File Descriptors
+
+---
+
+## Purpose
+The **`fcntl`** (file control) function modifies properties of an already **open file descriptor (fd)**.  
+It supports various operations, including:
+
+1. **Duplicating file descriptors** (`F_DUPFD`, `F_DUPFD_CLOEXEC`)  
+2. **Managing file descriptor flags** (`F_GETFD`, `F_SETFD`)  
+3. **Managing file status flags** (`F_GETFL`, `F_SETFL`)  
+4. **Asynchronous I/O ownership** (`F_GETOWN`, `F_SETOWN`)  
+5. **Record locking** (`F_GETLK`, `F_SETLK`, `F_SETLKW`)
+
+---
+
+## Key Commands & Examples
+
+### 1. **Duplicating File Descriptors**
+- **`F_DUPFD:`** Duplicates `fd` to the lowest available fd ≥ `arg`.  
+  ```c
+  int newfd = fcntl(fd, F_DUPFD, 3);  // New fd ≥ 3
+  ```
+
+- **`F_DUPFD_CLOEXEC:`** Similar to `F_DUPFD`, but sets **`FD_CLOEXEC`** (close-on-exec).  
+
+---
+
+### 2. **File Descriptor Flags**
+- **`F_GETFD:`** Retrieves flags (e.g., **`FD_CLOEXEC`**).  
+  ```c
+  int flags = fcntl(fd, F_GETFD);  
+  ```
+
+- **`F_SETFD:`** Sets flags (e.g., enables `FD_CLOEXEC`).  
+  ```c
+  fcntl(fd, F_SETFD, FD_CLOEXEC);  // Close fd on exec()
+  ```
+
+---
+
+### 3. **File Status Flags**
+- **`F_GETFL:`** Retrieves file status flags (e.g., `O_RDWR`, `O_APPEND`).  
+  ```c
+  int flags = fcntl(fd, F_GETFL);  
+  if (flags & O_APPEND) printf("Append mode enabled");  
+  ```
+
+- **`F_SETFL:`** Updates file status flags (only certain flags like `O_APPEND`, `O_NONBLOCK`, `O_SYNC`).  
+  ```c
+  fcntl(fd, F_SETFL, flags | O_APPEND);  // Enable append mode  
+  ```
+
+---
+
+### 4. **Asynchronous I/O Ownership**
+- **`F_GETOWN:`** Retrieves the process/group receiving `SIGIO`/`SIGURG`.  
+- **`F_SETOWN:`** Sets the process (arg > 0) or group (arg < 0) to receive signals.  
+  ```c
+  fcntl(fd, F_SETOWN, getpid());  // Send signals to this process  
+  ```
+
+---
+
+## Critical Notes
+
+### 1. **Atomicity**
+- `fcntl` operations are **atomic**, unlike manual `close` + `dup`.
+
+### 2. **Flag Management**
+- Always **read-modify-write** flags to avoid overwriting existing settings:  
+  ```c
+  int flags = fcntl(fd, F_GETFL);  
+  fcntl(fd, F_SETFL, flags | O_NONBLOCK);  // Add nonblocking mode  
+  ```
+
+### 3. **Access Modes**
+- Use **`O_ACCMODE`** to check access modes (`O_RDONLY`, `O_WRONLY`, `O_RDWR`):  
+  ```c
+  switch (flags & O_ACCMODE) {  
+    case O_RDONLY: /* Read-only */ break;  
+    case O_WRONLY: /* Write-only */ break;  
+    case O_RDWR:   /* Read-write */ break;  
+  }  
+  ```
+
+---
+
+## Practical Use Cases
+
+### 1. Enable Nonblocking I/O
+```c
+fcntl(socket_fd, F_SETFL, O_NONBLOCK);  
+```
+
+### 2. Force Synchronous Writes (`O_SYNC`)
+```c
+fcntl(fd, F_SETFL, O_SYNC);  // Each write() waits for disk  
+```
+
+### 3. Shell Redirection
+- Modify the flags of inherited descriptors (e.g., `stdout`).  
+
+---
+
+## Performance Implications
+
+### 1. **`O_SYNC`/`O_DSYNC`**
+- Ensures **data integrity** but slows writes (see Section 3.13).  
+
+### 2. **`O_NONBLOCK`**
+- Useful for sockets/pipes to avoid blocking operations.  
+
+---
+
+## Summary
+
+- **`fcntl`** is the Swiss Army knife for file descriptor control.  
+- Key Uses:
+  - Duplicate file descriptors.  
+  - Toggle flags (`O_APPEND`, `O_NONBLOCK`).  
+  - Manage asynchronous I/O.  
+
+- **Best Practices:**
+  - Always use `F_GETFL` before `F_SETFL` to preserve existing flags.  
+  - Prefer `fcntl` over `dup2` for advanced descriptor management (e.g., setting `FD_CLOEXEC`).  
+
+---
+
+**Pro Tip:** Use `fcntl` to enable nonblocking mode or ensure atomic flag modifications!
+
+
+# Section 3.15: `ioctl` Function
+
+---
+
+## Overview
+
+- **Purpose:**  
+  The `ioctl` (I/O control) system call is a **versatile** tool used for performing **device-specific operations** that are not possible with standard I/O functions (`read`, `write`, `lseek`, etc.).
+
+- **Usage:**  
+  Commonly used for:
+  - **Terminal I/O**  
+  - Miscellaneous **device operations** (e.g., disks, tapes, sockets, etc.).
+
+- **Status:**  
+  Classified as **obsolescent** in SUSv4 (Single UNIX Specification, Version 4).  
+  However, it remains widely used in UNIX systems.
+
+---
+
+## Function Prototype
+
+```c
+#include <unistd.h>  /* System V */  
+#include <sys/ioctl.h>  /* BSD and Linux */  
+
+int ioctl(int fd, int request, ...);  
+```
+
+- **Returns:**  
+  - `-1` on error.  
+  - Implementation-defined value on success.  
+
+- **Arguments:**
+  1. **`fd:`** File descriptor for the target device.  
+  2. **`request:`** A predefined command (usually a `#define` constant).  
+  3. **`...:`** Optional additional arguments (typically a pointer to a struct or variable).  
+
+---
+
+## Key Points
+
+### 1. **Device-Specific Commands**
+- Each **driver** defines its own `ioctl` commands.  
+- Common categories:
+  - **Disk I/O**  
+  - **Terminal control**  
+  - **Tape operations**  
+  - **Socket management**  
+
+- **Example Headers:**
+  - `<termios.h>`  
+  - `<sys/disklabel.h>`  
+  - `<sys/sockio.h>`
+
+---
+
+### 2. **Terminal I/O**
+- Historically, terminal operations relied heavily on `ioctl`.  
+- **POSIX.1** later replaced many terminal-specific `ioctl` calls with dedicated functions (covered in Chapter 18).
+
+---
+
+### 3. **Variations Across Systems**
+- **FreeBSD/MacOS:**  
+  Declare the `request` argument as `unsigned long`.  
+- **Extended Support:**  
+  Some UNIX systems extend `ioctl` to regular files.
+
+---
+
+## Common Use Cases
+
+1. **Tape Operations:**  
+   - Rewind tape, write EOF marks.  
+
+2. **Terminal Window Size Manipulation:**  
+   - Resize terminal windows (see Section 18.12).  
+
+3. **Pseudo-Terminal Advanced Features:**  
+   - Advanced operations for pseudo-terminals (see Section 19.7).  
+
+---
+
+## Example Categories (FreeBSD)
+
+| **Category**         | **Header**          | **Number of Commands** |
+|-----------------------|---------------------|-------------------------|
+| **Disk Labels**       | `<sys/disklabel.h>` | 4                       |
+| **File I/O**          | `<sys/filio.h>`     | 14                      |
+| **Magnetic Tape I/O** | `<sys/mtio.h>`      | 11                      |
+| **Socket I/O**        | `<sys/sockio.h>`    | 73                      |
+| **Terminal I/O**      | `<sys/ttycom.h>`    | 43                      |
+
+---
+
+## Conclusion
+- **`ioctl`** remains a **"catch-all"** for non-standard I/O operations.  
+  - Gradually being replaced by **POSIX-specific functions**.
+- Essential for **low-level device control**, especially in **legacy** and **specialized hardware interfaces**.
+
+---
+
+## Next Steps
+1. **Chapter 18:**  
+   Explore POSIX terminal functions replacing `ioctl`.  
+2. **Section 18.12 & 19.7:**  
+   Demonstrates practical `ioctl` usage for terminal and pseudo-terminal operations.
+
+# Section 3.16: `/dev/fd`
+
+---
+
+## Overview
+
+- **Purpose:**  
+  `/dev/fd` is a directory containing files named `0`, `1`, `2`, etc., corresponding to **open file descriptors**.
+
+- **Functionality:**  
+  Opening `/dev/fd/n` duplicates descriptor `n` (similar to `dup(n)`).
+
+- **Origin:**  
+  Introduced in **Research UNIX (8th Edition)** by Tom Duff.
+
+- **Supported Systems:**  
+  Available in **FreeBSD, Linux, macOS, Solaris**.  
+  *(Not part of POSIX.1.)*
+
+---
+
+## Key Behaviors
+
+### 1. **Opening `/dev/fd/n`**
+- **Equivalent to `dup(n)`**, sharing the same file table entry.
+- Most systems **ignore the mode** in `open("/dev/fd/n", mode)` and enforce the original descriptor’s mode.
+  - Example: If `n` is read-only, the new descriptor will also be read-only.
+
+- **Linux Exception:**  
+  `/dev/fd/n` is mapped to **symbolic links** of the actual files.  
+  - This means the **new descriptor’s mode** may differ from the original.
+
+---
+
+### 2. **`creat` and `O_CREAT`**
+- Works with `/dev/fd` paths (e.g., `creat("/dev/fd/1", ...)`).
+
+- **Linux Warning:**  
+  Using `creat` on `/dev/fd` may **truncate the underlying file** due to symlink resolution.  
+
+---
+
+### 3. **Convenience Symlinks**
+Some systems provide easier-to-read symlinks for commonly used descriptors:
+- `/dev/stdin` → `/dev/fd/0`  
+- `/dev/stdout` → `/dev/fd/1`  
+- `/dev/stderr` → `/dev/fd/2`  
+
+---
+
+## Primary Use Case: Shell Commands
+
+- Enables programs to treat **stdin/stdout** like **regular files**, avoiding special cases (e.g., `-` for stdin in `cat`).
+
+### Example:
+
+#### Traditional (using `-` for stdin):
+```sh
+filter file2 | cat file1 - file3 | lpr  
+```
+
+
