@@ -583,4 +583,86 @@ This program copies data from **input** (like a file or keyboard) to **output** 
 - Let the **shell handle file redirection** (`< input > output`).  
 - The system **caches files**, so repeated runs are faster.  
 
-🚀 This is how you efficiently copy files in C!
+This is how you efficiently copy files in C!
+
+
+# Section 3.10: File Sharing in UNIX
+
+In UNIX, multiple programs (processes) can share the same open file. Here's how the system manages this:
+
+---
+
+## 3 Key Data Structures in the Kernel
+
+The kernel (core part of the OS) uses **three tables** to keep track of open files:
+
+### 1. **Process File Descriptor Table**
+- Each process has its own list of **file descriptors** (e.g., `0=stdin`, `1=stdout`, `3=some_file`).  
+- Each entry contains:
+  - **File descriptor flags** (e.g., `close-on-exec`).  
+  - A **pointer to a File Table Entry**.
+
+---
+
+### 2. **File Table (Shared Across Processes)**
+- Stores information about **how the file is opened**, including:
+  - **File status flags** (e.g., `O_RDONLY`, `O_WRONLY`, `O_APPEND`).  
+  - **Current file offset** (where the next `read`/`write` happens).  
+  - A **pointer to the v-node** (file metadata).
+
+---
+
+### 3. **v-node Table (File Metadata)**
+- Stores permanent details about the file, such as:
+  - File type, owner, size, and disk location.  
+- Same for **all processes** opening the same file.  
+- *(Note: Linux uses **i-nodes** instead of v-nodes, but the concept is similar.)*
+
+---
+
+## How File Sharing Works
+When two processes open the same file, they get:
+1. **Different file descriptors** (e.g., `fd=3` in Process A, `fd=4` in Process B).  
+2. **Different File Table Entries** (each process has its own file offset).  
+3. **The same v-node:** Both processes refer to the same file on disk.
+
+---
+
+## Important Behaviors
+
+### ✔ Writing to a File
+- Each `write()` updates the **file offset** in the File Table.  
+- If `O_APPEND` is used, the OS ensures all writes happen **at the end of the file** (even if multiple processes are writing).  
+
+---
+
+### ✔ `lseek()` (Changing File Position)
+- Updates the **current offset** in the File Table (no actual disk I/O).
+
+---
+
+### ✔ `fork()` (Creating Child Processes)
+- The **child process** shares the same file descriptors as the parent.  
+- This means they also share the same File Table entries, including file offsets.
+
+---
+
+### ✔ `dup()` (Duplicating File Descriptors)
+- Creates a new file descriptor that shares the **same File Table entry**.  
+- Both descriptors will have the same file offset.
+
+---
+
+## Problems with Multiple Writers
+- If two processes write at the same time **without `O_APPEND`**, their writes can **overlap or corrupt data**.  
+- **Solution:** Use atomic operations like `O_APPEND` or synchronization tools (e.g., locks) to avoid conflicts.
+
+---
+
+## Simple Summary
+- Each process has its own **file descriptors**.  
+- Multiple processes can **read/write** the same file.  
+- **`O_APPEND`** ensures safe writes to the end of the file.  
+- **`fork()` and `dup()`** share File Table entries and offsets.  
+
+This is how UNIX allows multiple programs to work on the same file efficiently!
