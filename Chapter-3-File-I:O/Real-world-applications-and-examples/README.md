@@ -815,3 +815,91 @@ write(fd2, "PROC_B", 6);
 
 - **Temp Files:**  
   Use `O_EXCL` during creation to prevent races.
+
+
+# Section 3.11: Atomic Operations
+
+## What is an Atomic Operation?
+An **atomic operation** is a single, unbreakable action. This means:
+- **Either all steps happen successfully, or nothing happens.**  
+- **No other process can interfere** during the operation.
+
+---
+
+## Example 1: Appending to a File
+
+### Problem Without Atomicity:
+Imagine two programs (A and B) writing to the same log file:
+
+1. Process A moves to the end (`lseek`) → offset = 1500.  
+2. Process B moves to the end (`lseek`) → offset = 1500.  
+3. Process B writes 100 bytes → file size = 1600.  
+4. Process A writes 100 bytes → **overwrites B’s data!** (because A’s offset was still 1500).
+
+---
+
+### Solution: `O_APPEND` Flag
+If you open the file with **`O_APPEND`**:
+```c
+open("file.log", O_WRONLY | O_APPEND);
+```
+- The **OS automatically moves to the end** of the file before each `write`.  
+- No need for `lseek` → **no race condition!**
+
+---
+
+## Example 2: `pread()` and `pwrite()`
+
+### How They Work:
+These functions combine `lseek` + `read`/`write` **atomically**:
+```c
+ssize_t pread(int fd, void *buf, size_t size, off_t offset);  // Read at a fixed offset
+ssize_t pwrite(int fd, const void *buf, size_t size, off_t offset);  // Write at a fixed offset
+```
+
+### Why Use Them?
+- **No risk** of another process changing the file offset in between.  
+- **Safer** than using separate `lseek` + `read`/`write` calls.
+
+---
+
+### Example:
+```c
+pwrite(fd, "Atomic!", 7, 100);  // Writes "Atomic!" at offset 100
+```
+- Writes to the file **at offset 100**, without interference from other processes.
+
+---
+
+## Example 3: Creating a File Safely
+
+### Problem Without Atomicity:
+If you check if a file exists (`open`) and then create it (`creat`):
+1. Process A checks → file doesn’t exist.  
+2. Process B creates the file and writes data.  
+3. Process A creates the file → **erases B’s data!**
+
+---
+
+### Solution: `O_CREAT | O_EXCL`
+```c
+open(path, O_CREAT | O_EXCL, mode);
+```
+- If the file **exists** → operation **fails**.  
+- If the file **doesn’t exist** → creates it atomically.  
+- **No race condition!**
+
+---
+
+## Why Atomic Operations Matter?
+- **Prevents data corruption** when multiple processes access the same file.  
+- **Avoids race conditions** (where two programs interfere unexpectedly).  
+
+---
+
+## Simple Summary
+- ✅ Use **`O_APPEND`** → Safe appending.  
+- ✅ Use **`pread`/`pwrite`** → Safe reading/writing at fixed positions.  
+- ✅ Use **`O_CREAT | O_EXCL`** → Safe file creation.  
+
+🚀 **Atomic operations** keep your file I/O safe and reliable!
