@@ -547,3 +547,94 @@ close(fd);
 3. **Simplified File Handling:** Shell redirection eliminates the need for explicit `open()` and `close()`.  
 
 > *(Note: "incore" refers to in-memory operations, a term originating from ferrite-core memory systems.)*
+
+
+# Section 3.10: File Sharing in UNIX Systems
+
+## Key Data Structures for File Sharing
+The kernel uses three structures to manage open files across processes:
+
+### 1. **Process-Level File Descriptor Table**
+- Each process maintains its own table of **file descriptors** (e.g., `0=stdin`, `1=stdout`).  
+- Each entry contains:
+  - **File descriptor flags** (e.g., `close-on-exec`).  
+  - **Pointer to a file table entry** in the kernel.
+
+---
+
+### 2. **Kernel File Table**
+- Shared among **all processes**.  
+- Each entry tracks:
+  - **File status flags** (e.g., `O_RDONLY`, `O_APPEND`).  
+  - **Current file offset** (position for `read`/`write`).  
+  - **Pointer to a v-node/i-node entry**.
+
+---
+
+### 3. **v-node/i-node Table**
+- Contains **file metadata**, including:
+  - File type, size, disk blocks, and permissions.  
+- **v-node**: Used in Solaris/BSD for multi-filesystem support (e.g., NFS).  
+- **i-node**: Linux uses a unified i-node instead of a v-node + i-node split.  
+
+---
+
+## How File Sharing Works
+- Multiple processes can open the **same file**:
+  - Each process gets a **separate file table entry** with its **own offset**.  
+  - All processes share the **same v-node/i-node** (ensuring file metadata consistency).  
+
+### Example: Two Processes Writing to the Same File
+- Each process has **independent offsets**, unless `O_APPEND` is used.  
+- Without proper synchronization, writes may overlap or overwrite each other.
+
+---
+
+## Critical Behaviors
+
+### 1. **`write()` Updates**
+- Increments the **file table offset** after writing.  
+- If the **offset > file size**, the i-node size expands.
+
+---
+
+### 2. **`O_APPEND` Mode**
+- Ensures **atomic writes** by forcing all writes to the **end of the file**:  
+  - Offset = file size **before each write**.  
+
+---
+
+### 3. **`lseek()`**
+- Only modifies the **file table offset** (no actual I/O occurs).  
+- Unlike `O_APPEND`, it doesn’t guarantee **atomic appends**.
+
+---
+
+### 4. **Shared File Table Entries**
+- Occurs after **`dup()`** or **`fork()`**:
+  - Child processes inherit the parent’s descriptors.  
+  - Shared file table entries affect offsets.
+
+---
+
+## Atomicity & Race Conditions
+- **Concurrent writes** without `O_APPEND` risk data corruption due to **offset races**.  
+- **Solutions:**
+  - Use **atomic operations** (e.g., `O_APPEND`).  
+  - Use **file locks** (e.g., `fcntl`) for synchronization.
+
+---
+
+## Implementation Notes
+- **v-node** was introduced for supporting multiple filesystems (e.g., NFS).  
+- Linux simplifies this with a unified **i-node** structure.
+
+---
+
+## Takeaway
+- File sharing in UNIX relies on three kernel structures:  
+  - **Process-level descriptors** for isolation.  
+  - **Kernel file table & v-node/i-node** for synchronization.  
+
+- **`O_APPEND`** ensures **atomic writes**. Without it, processes may overwrite each other.  
+- **Shared file table entries** (via `dup()`/`fork()`) can affect offsets during file operations.
