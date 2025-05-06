@@ -46,7 +46,7 @@
 - **GNU/Linux** = Linux kernel + GNU tools/apps.  
 - Most people call it "Linux" for short, even though it’s technically the whole system.  
 
-# 1.3 Logging In & Shells Explained Simply
+# 1.3 Logging In & Shells
 
 ## Logging In
 - **Login Name & Password**:  
@@ -219,7 +219,7 @@ $ cd ~  # Shortcut to go home.
 ```
 
 
-# 1.5 Input and Output Explained Simply
+# 1.5 Input and Output
 
 ## **File Descriptors**  
 - **What are they?**  
@@ -326,7 +326,7 @@ int main(void) {
 - Standard I/O is simpler for most tasks (like reading text).
 
 
-# 1.6 Programs and Processes Explained Simply
+# 1.6 Programs and Processes
 
 ## **Program**  
 - A **program** is a file saved on your computer (like `a.out` after compiling code).  
@@ -438,8 +438,7 @@ A thread is like a worker inside a process.
 - **Threads** make programs faster by doing many tasks at once (e.g., downloading files while scrolling).
 
 
-# 1.7 Error Handling Explained Simply
-
+# 1.7 Error Handling
 ## **What Happens When Errors Occur?**  
 - When a UNIX function fails (e.g., opening a file), it returns a special value (like `-1` or `NULL`).  
 - The computer sets a global variable **`errno`** to a number explaining why the error happened.  
@@ -461,9 +460,9 @@ A thread is like a worker inside a process.
 Two ways to get readable error messages:  
 
 1. **`strerror()`**:  
-   ```c
-   char *strerror(int errno); // Turns error code to text
-   ```
+```c
+char *strerror(int errno); // Turns error code to text
+```
 **Example:**
 
 ```c
