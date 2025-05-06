@@ -528,3 +528,72 @@ my_program: No such file or directory
 - Use `perror()` to include your program’s name in error messages (helps debugging).
 - For threads, `errno` is **thread-safe** (each thread has its own copy).
 
+
+# 1.8 User Identification
+
+## **User ID (UID)**  
+- **What is it?**  
+  Every user has a **unique number** (like a secret code) called a **User ID**.  
+  - Assigned by the system admin.  
+  - **Root user** (superuser) has UID **0** → has full control over the system.  
+
+- **Why it matters?**  
+  The system uses UID to check if you can do things (like open files).  
+
+---
+
+## **Group ID (GID)**  
+- **What is it?**  
+  A **Group ID** is a number for a "team" of users.  
+  - Lets team members share files.  
+  - Example: All developers in a group can edit the same code.  
+
+- **How it works?**  
+  - Stored in `/etc/passwd` (user info) and `/etc/group` (group info).  
+  - The system uses numbers (not names) because they’re faster to process.  
+
+### **Example Code**  
+This program prints your UID and GID:  
+```c
+#include "apue.h"
+
+int main() {
+  printf("uid = %d, gid = %d\n", getuid(), getgid());
+  exit(0);
+}
+
+```
+
+## Output:
+
+`uid = 205, gid = 105`
+
+- `getuid()` → Your User ID.
+- `getgid()` → Your Group ID.
+
+
+## Supplementary Groups
+
+## What are they?
+
+- You can belong to extra groups (like being in multiple clubs).
+- Started with BSD systems (up to 16 groups).
+- Modern systems allow 8+ groups (often 16).
+
+## Why use them?
+
+- Lets you access files from different teams without changing your main group.
+
+## Key Files
+
+- `/etc/passwd`:  
+  Stores user info (name, UID, GID, home folder, shell).
+
+- `/etc/group`:  
+  Stores group info (group name, GID, members).
+
+## Why This Matters
+
+- `UID`/`GID` control file access (who can read/write).
+- `root` (UID 0) can do anything (be careful!).
+- Groups make sharing easier (no need to set permissions for each user).
