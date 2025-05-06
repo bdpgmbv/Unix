@@ -58,7 +58,6 @@
 > Modern systems store the encrypted password in a different file (like `/etc/shadow`).  
 > (We’ll learn more about password files in Chapter 6.)
 
----
 
 ## **Shells**
 - After logging in, you see a **shell** (a program that takes your commands and runs them).  
@@ -92,7 +91,6 @@
   - **Mac OS**: `bash`.
   - **FreeBSD/Solaris**: Mix of shells like `sh`, `csh`, `bash`.
 
----
 
 **Note**:  
 - This book uses examples from **Bourne-like shells** (Bourne, Korn, `bash`) for consistency.
@@ -107,7 +105,6 @@
 - **Directory** = A special file that holds info about other files (names, types, sizes, permissions, etc.).
   - Use `stat` or `fstat` to see file details (Chapter 4).
 
----
 
 ## **Filename**
 - **Rules**:
@@ -118,14 +115,12 @@
   - `..` (parent directory).  
     Example: In `/home/user`, `..` points to `/home`.
 
----
 
 ## **Pathname**
 - **Pathname** = Directions to find a file (e.g., `/home/user/file.txt`).
   - **Absolute path**: Starts with `/` (e.g., `/home/user`).
   - **Relative path**: Starts from your current folder (e.g., `docs/notes.txt`).
 
----
 
 ## **Example: Listing Files**
 A simple program to list files in a directory:
@@ -192,7 +187,6 @@ int main(int argc, char *argv[]) {
   Small numbers (like 0, 1, 2) used by the system to track open files.
   - Example: When you open a file, the system gives you a number (file descriptor) to use for reading/writing.
 
----
 
 ## **Standard Input, Output, Error**
 - Every program gets 3 default "channels":
@@ -204,7 +198,6 @@ int main(int argc, char *argv[]) {
   - `ls` uses all 3 channels (shows files on screen).
   - `ls > file.list` redirects output to a file (`file.list`).
 
----
 
 ## **Unbuffered I/O**
 - **Basic functions**: `open`, `read`, `write`, `close`.
