@@ -326,3 +326,206 @@ int main(void) {
 - Standard I/O is simpler for most tasks (like reading text).
 
 
+# 1.6 Programs and Processes Explained Simply
+
+## **Program**  
+- A **program** is a file saved on your computer (like `a.out` after compiling code).  
+- Example: A recipe saved in a book.  
+
+---
+
+## **Process**  
+- A **process** is when the program is **running** (like cooking using the recipe).  
+- Each process has a unique **Process ID (PID)** (e.g., `851`, `854`).  
+
+### **Example Code**  
+This program prints its own PID:  
+```c
+#include "apue.h"
+
+int main(void) {
+  printf("hello world from process ID %ld\n", (long)getpid());
+  exit(0);
+}
+
+$ ./a.out  
+hello world from process ID 851  
+$ ./a.out  
+hello world from process ID 854  
+```
+
+## `getpid()`
+
+- `getpid()` gets the PID (Process ID).
+- Every time you run the program, it gets a new PID.
+
+---
+
+## Process Control
+
+**3 key functions control processes:**
+
+- `fork()`: Creates a copy of the current process (parent → child).
+  - Parent gets the child’s PID.
+  - Child gets `0`.
+
+- `exec()`: Replaces the current process with a new program (e.g., runs `ls`, `date`).
+
+- `waitpid()`: Makes the parent wait for the child to finish.
+
+---
+
+## Example: Simple Shell Program
+
+This code acts like a basic shell (reads commands and runs them):
+
+```C
+#include "apue.h"
+#include <sys/wait.h>
+
+int main(void) {
+  char buf[MAXLINE];
+  pid_t pid;
+  int status;
+
+  printf("%% "); // Show prompt (e.g., % )
+  while (fgets(buf, MAXLINE, stdin) != NULL) {
+    buf[strlen(buf) - 1] = 0; // Remove newline
+    if ((pid = fork()) < 0) {
+      err_sys("fork error");
+    } else if (pid == 0) { // Child process
+      execlp(buf, buf, (char *)0); // Run command (e.g., "date")
+      err_ret("error: %s", buf);
+      exit(127);
+    }
+    // Parent waits for child
+    if (waitpid(pid, &status, 0) < 0)
+      err_sys("waitpid error");
+    printf("%% ");
+  }
+  exit(0);
+}
+```
+
+## How it works:
+
+- Reads a command (e.g., `date`).
+- `fork()` creates a child process.
+- Child uses `execlp()` to run the command.
+- Parent waits (`waitpid()`) for the child to finish.
+
+**Limitation:** Can’t pass arguments (e.g., `ls -l` won’t work).
+
+
+## Threads
+
+A thread is like a worker inside a process.  
+**1 process = 1+ threads.** Threads share memory (e.g., variables, files).
+
+- **Thread ID (TID):** Unique within a process (not across the whole system).
+
+
+### Key Points:
+
+- Threads are faster to create than processes.
+- Threads need synchronization (to avoid messing up shared data).
+- **Example:** Multiple threads in a web browser can load images and text at the same time.
+
+
+## Why This Matters
+
+- **Processes** let you run multiple programs at once (e.g., browser + music player).
+- **Threads** make programs faster by doing many tasks at once (e.g., downloading files while scrolling).
+
+
+# 1.7 Error Handling Explained Simply
+
+## **What Happens When Errors Occur?**  
+- When a UNIX function fails (e.g., opening a file), it returns a special value (like `-1` or `NULL`).  
+- The computer sets a global variable **`errno`** to a number explaining why the error happened.  
+  - Example: `EACCES` means "Permission denied".  
+
+---
+
+## **Understanding `errno`**  
+- **`errno`** is like an error code book:  
+  - Defined in `<errno.h>`.  
+  - Every error has a name starting with `E` (e.g., `ENOENT` = "File not found").  
+- **Rules for `errno`**:  
+  1. Only check `errno` **after** a function fails (it keeps old values otherwise).  
+  2. `errno` is never `0` (so `0` means no error).  
+
+---
+
+## **Error Messages**  
+Two ways to get readable error messages:  
+
+1. **`strerror()`**:  
+   ```c
+   char *strerror(int errno); // Turns error code to text
+   ```
+**Example:**
+
+```c
+printf("Error: %s\n", strerror(EACCES)); // Prints "Permission denied"
+```
+
+2. **`perror()`**: 
+```c
+void perror(const char *msg); // Prints message + error
+```
+
+**Example:**
+```c
+perror("my_program"); // Prints "my_program: No such file"
+```
+
+**Example code:**
+
+```c
+#include "apue.h"
+#include <errno.h>
+
+int main() {
+  fprintf(stderr, "EACCES: %s\n", strerror(EACCES)); // Show EACCES message
+  errno = ENOENT; // Set error to "File not found"
+  perror("my_program"); // Prints "my_program: No such file"
+  exit(0);
+}
+```
+
+**Output:**
+
+```
+EACCES: Permission denied
+my_program: No such file or directory
+```
+
+## Types of Errors
+
+### Fatal Errors:
+- **No fix.**  
+  - **Example:** Out of memory.
+- **What to do:** Print error → Exit program.
+
+### Non-Fatal Errors:
+- **Can be fixed by retrying.**  
+  - **Examples:**
+    - `EAGAIN`: Resource busy.
+    - `ENOSPC`: Disk full.
+- **What to do:** Wait → Try again later.
+
+
+## Why This Matters
+
+- `errno` tells you why something failed.
+- `perror()` / `strerror()` turn codes into human-readable messages.
+- Handle errors to make programs **stable** (don’t crash easily).
+
+
+## Tips
+
+- Always check function return values for errors.
+- Use `perror()` to include your program’s name in error messages (helps debugging).
+- For threads, `errno` is **thread-safe** (each thread has its own copy).
+
