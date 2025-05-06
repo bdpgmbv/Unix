@@ -591,3 +591,58 @@ int main() {
 - `UID`/`GID` control file access (who can read/write).
 - `root` (UID 0) can do anything (be careful!).
 - Groups make sharing easier (no need to set permissions for each user).
+
+
+# 1.9 Signals 
+
+## **What Are Signals?**  
+Signals are like "alarms" sent to a program to tell it something happened.  
+- Examples:  
+  - Dividing by zero → `SIGFPE` (math error signal).  
+  - Pressing **Ctrl+C** → `SIGINT` (interrupt signal).  
+
+## **What Can a Program Do with a Signal?**  
+1. **Ignore It** (not safe for serious errors like crashes).  
+2. **Let Default Action Happen** (e.g., program stops).  
+3. **Catch It** (run a special function to handle the signal).  
+
+## **Example: Catching Ctrl+C**  
+In the simple shell program (from Section 1.6), pressing **Ctrl+C** would normally exit.  
+But we can **catch** the signal to keep running:  
+
+```c
+#include "apue.h"
+#include <sys/wait.h>
+
+static void sig_int(int); // Signal handler
+
+int main() {
+  // Tell the system to call sig_int() when Ctrl+C is pressed
+  if (signal(SIGINT, sig_int) == SIG_ERR)
+    err_sys("signal error");
+
+  printf("%% "); // Show prompt (%)
+  // ... rest of the shell code ...
+}
+
+// Function to handle Ctrl+C
+void sig_int(int signo) {
+  printf("\ninterrupt\n%% "); // Print message, keep running
+}
+```
+
+## What Changed?
+
+- Added `signal(SIGINT, sig_int)` → Catches Ctrl+C.
+- `sig_int()` prints `"interrupt"` and keeps the shell running.
+
+## How Signals Are Generated
+
+- **Hardware Errors:** e.g., invalid math operation.
+- **Terminal Keys:** e.g., Ctrl+C, Ctrl+\
+- **`kill` Command:** Send signals to other programs (requires permission).
+
+## Why This Matters
+
+- Signals let programs handle unexpected events (like user interruptions).
+- **Example:** Saving data before exiting, or ignoring accidental Ctrl+C.
