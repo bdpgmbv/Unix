@@ -660,8 +660,6 @@ void sig_int(int signo) {
    - Measures how much **CPU power** a program uses.  
    - Stored in `clock_t` (counts "clock ticks").  
 
----
-
 ### **Three Time Measurements for Programs**:  
 | Type              | What It Means                                  |  
 |--------------------|-----------------------------------------------|  
@@ -691,14 +689,10 @@ sys  0.03s  # System time
 - **Examples:** `malloc()`, `printf()`, `strcpy()`
 - **Key Point:** You can replace these (e.g., write your own `malloc()`).
 
----
-
 ### How They Work Together
 
 - **Example 1:** `malloc()` (library) uses `sbrk()` (system call) to get memory.
 - **Example 2:** `printf()` (library) uses `write()` (system call) to print text.
-
----
 
 ### Comparison
 
@@ -706,8 +700,6 @@ sys  0.03s  # System time
 |---------------------------|-----------------------------------|
 | Minimal, direct to OS     | Add extra features                |
 | Hard to replace           | Easy to replace/customize         |
-
----
 
 ### Why This Matters
 
