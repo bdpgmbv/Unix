@@ -17,7 +17,6 @@
 - **Atomic Operations**:  
   - Actions that **cannot be interrupted** (e.g., creating a file in one step to avoid errors).  
 
----
 
 ## **3.2 File Descriptors**  
 - **What is a File Descriptor?**  
@@ -36,7 +35,6 @@
   - File descriptors start at `0`.  
   - Old systems allowed ~20 open files. **Modern systems** allow thousands (limited by memory).  
 
----
 
 ## **Why This Matters**  
 - **File I/O** lets programs save/load data (e.g., text files, images).  
@@ -48,14 +46,12 @@
 - **`open()`** and **`openat()`** are used to **open** or **create** files.  
 - Return a **file descriptor** (a number) if successful, `-1` if error.  
 
----
 
 ## **Parameters**  
 1. **`path`**: File name/path to open/create.  
 2. **`oflag`**: Options (see below).  
 3. **`mode`**: Required only if creating a new file (sets permissions).  
 
----
 
 ## **Key Options (`oflag`)**  
 **Must pick one of these first:**  
@@ -73,7 +69,6 @@
 - `O_NONBLOCK`: Don’t wait for slow devices (like keyboards).  
 - `O_SYNC`: Wait until data is **safely written** to disk.  
 
----
 
 ## **`openat()` vs `open()`**  
 - **`openat()`** adds a `fd` (file descriptor) parameter:  
@@ -85,14 +80,12 @@
 - Lets threads work in **different folders** safely.  
 - Avoids security bugs (TOCTTOU errors).  
 
----
 
 ## **Errors to Know**  
 - If the filename is **too long**:  
   - Some systems **truncate** it (cut off extra letters).  
   - Others return `ENAMETOOLONG` error.  
 
----
 
 ## **Example Code**  
 ```c
