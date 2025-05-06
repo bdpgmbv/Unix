@@ -236,8 +236,6 @@ By default, every program gets 3 "file numbers":
   `ls > file.list`  
   - Runs `ls` but saves output to `file.list` instead of the screen.  
 
----
-
 ## **Unbuffered I/O**  
 - **What is it?**  
   Basic functions to read/write files directly (no automatic help from the computer).  
@@ -269,14 +267,12 @@ int main(void) {
 - Writes the same data to output.
 - Stops when there’s no more input or an error.
 
----
 
 ## Run Examples:
 
 - `./a.out > data`: Saves typed input to `data`.
 - `./a.out < infile > outfile`: Copies `infile` to `outfile`.
 
----
 
 ## Standard I/O
 
@@ -286,7 +282,6 @@ Easier functions with automatic buffering (the computer manages data chunks for 
 **Key functions:**  
 `printf()`, `fgets()`, `getc()`, `putc()`
 
----
 
 ## Example Code
 
@@ -314,7 +309,6 @@ int main(void) {
 - Writes one character at a time.
 - Stops at EOF (like pressing Ctrl+D).
 
----
 
 ## Buffered vs. Unbuffered I/O
 
@@ -324,7 +318,6 @@ int main(void) {
 | Uses `read()` / `write()`.    | Uses `getc()` / `putc()`, `printf()`, etc.  |
 | Faster for big files.         | Easier for text (reads lines, handles errors). |
 
----
 
 ## Why This Matters
 
