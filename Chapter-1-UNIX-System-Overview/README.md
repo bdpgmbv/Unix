@@ -1,4 +1,4 @@
-# Simple Explanation of UNIX System Introduction and Architecture
+# UNIX System Introduction and Architecture
 
 # 1.1 Introduction
 - **What is an Operating System (OS)?**  
@@ -646,3 +646,71 @@ void sig_int(int signo) {
 
 - Signals let programs handle unexpected events (like user interruptions).
 - **Example:** Saving data before exiting, or ignoring accidental Ctrl+C.
+
+# 1.10 Time Values & 1.11 System Calls
+## **1.10 Time Values**  
+
+### **Two Types of Time in UNIX**:  
+1. **Calendar Time**:  
+   - Counts seconds since **January 1, 1970** (like a computer’s clock).  
+   - Used for file timestamps (e.g., "last modified").  
+   - Stored in `time_t` (a special number type).  
+
+2. **Process Time (CPU Time)**:  
+   - Measures how much **CPU power** a program uses.  
+   - Stored in `clock_t` (counts "clock ticks").  
+
+---
+
+### **Three Time Measurements for Programs**:  
+| Type              | What It Means                                  |  
+|--------------------|-----------------------------------------------|  
+| **Clock Time**     | Total time taken (like a stopwatch).          |  
+| **User CPU Time**  | Time spent running your code.                 |  
+| **System CPU Time**| Time spent on OS tasks (e.g., reading files). |  
+
+**Example**:  
+```bash
+$ time -p ls  
+real 0.05s  # Total time  
+user 0.01s  # Your code time  
+sys  0.03s  # System time  
+```
+
+# 1.11 System Calls vs. Library Functions
+
+### System Calls:
+**What:** Direct requests to the OS kernel (e.g., open a file).
+
+- **Examples:** `read()`, `write()`, `fork()`
+- **Key Point:** You can’t change them – they’re part of the OS.
+
+### Library Functions:
+**What:** Helper tools in C libraries (e.g., `printf()`).
+
+- **Examples:** `malloc()`, `printf()`, `strcpy()`
+- **Key Point:** You can replace these (e.g., write your own `malloc()`).
+
+---
+
+## How They Work Together
+
+- **Example 1:** `malloc()` (library) uses `sbrk()` (system call) to get memory.
+- **Example 2:** `printf()` (library) uses `write()` (system call) to print text.
+
+---
+
+## Comparison
+
+| System Calls              | Library Functions                 |
+|---------------------------|-----------------------------------|
+| Minimal, direct to OS     | Add extra features                |
+| Hard to replace           | Easy to replace/customize         |
+
+---
+
+## Why This Matters
+
+- **Time values** help track performance (e.g., why a program is slow).
+- **System Calls** are the backbone – they let programs interact with the OS safely.
+- **Library Functions** make coding easier (you don’t have to write everything from scratch).
