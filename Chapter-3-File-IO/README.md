@@ -102,3 +102,116 @@ int main() {
 
 - `open()` is the basic way to access files.
 - `openat()` adds flexibility for security and multi-threaded apps.
+
+
+# File Operations
+
+## **3.4 creat Function**  
+- **What it does**: Creates a new file.  
+- **Syntax**:  
+  ```c
+  int creat("filename", permissions);
+  ```
+
+  - Returns a **file descriptor** (number) for writing.
+
+**Note:**  
+`creat` is the same as `open` with specific flags:
+
+```c
+open(path, O_WRONLY | O_CREAT | O_TRUNC, mode);
+```
+
+## Problem
+
+- `creat` only opens a file for **writing**.
+- To read after creating, you must **close and reopen** the file.
+- **Better option:** Use `open()` with the `O_RDWR` flag for **read/write** access.
+
+---
+
+## 3.5 `close` Function
+
+**What it does:**  
+Closes an open file.
+
+**Syntax:**
+```c
+close(file_descriptor);
+```
+
+## Key Points
+
+- Always **close files** when done to free resources.
+- If a program **crashes or exits**, the OS automatically closes all open files.
+
+---
+
+## 3.6 `lseek` Function
+
+**What it does:**  
+Moves the "cursor" (file offset) in a file to read/write at specific positions.
+
+**Syntax:**
+```c
+off_t lseek(fd, offset, whence);  
+```
+
+### `whence` can be:
+
+- `SEEK_SET`: Start from the beginning of the file.
+- `SEEK_CUR`: Start from the current position.
+- `SEEK_END`: Start from the end of the file.
+
+---
+
+### Examples:
+
+**Get current position:**
+```c
+lseek(fd, 0, SEEK_CUR);
+```
+**Jump to byte 100:**
+```c
+lseek(fd, 100, SEEK_SET);  
+```
+**Jump 50 bytes backward:**
+```c
+lseek(fd, -50, SEEK_CUR);
+```
+
+## File Holes
+
+- If you `lseek` past the end of a file and write, it creates a **"hole"** (unused space that takes no disk storage).
+
+### Example:
+```c
+write(fd, "start", 5);   // Write "start" at position 0  
+lseek(fd, 1000, SEEK_SET); // Jump to position 1000  
+write(fd, "end", 3);     // Write "end" at position 1000
+```
+
+- The file size is 1003 bytes, but the middle 995 bytes are empty (saves disk space!).
+
+---
+
+## File Offset Sizes
+
+- `off_t` is the data type for file offsets.
+
+### System Differences:
+- **32-bit systems:** Max file size = 2 GB (`2^31 - 1` bytes).
+- **64-bit systems:** Max file size = Much larger (depends on OS/filesystem).
+
+### Enabling Large Files:
+- Use `#define _FILE_OFFSET_BITS 64` in your code to enable large file support (if supported by system and compiler).
+
+---
+
+## Why This Matters
+
+- `creat`: Rarely used now; `open()` is more flexible and preferred.
+- `close`: Prevents **resource leaks** (open file descriptors are limited).
+- `lseek`: Lets you **read/write anywhere** in a file — useful for **databases**, **logs**, and **binary formats**.
+- **Holes**: Efficient use of storage when writing sparse data.
+
