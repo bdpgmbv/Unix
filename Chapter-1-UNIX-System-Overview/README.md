@@ -48,7 +48,7 @@
 
 # 1.3 Logging In & Shells
 
-## Logging In
+### Logging In
 - **Login Name & Password**:  
   When you log into a UNIX system, you type your **login name** and **password**.  
   The system checks these in a file (`/etc/passwd`).  
@@ -64,7 +64,7 @@
   6. Home folder (`/home/sar`)  
   7. Default shell (`/bin/ksh` – the program you use to type commands).  
 
-## Shells
+### Shells
 A **shell** is like a tool that lets you talk to the computer by typing commands.  
 The system picks your shell based on Part 7 of the password file entry.
 
@@ -96,7 +96,7 @@ The system picks your shell based on Part 7 of the password file entry.
 - **FreeBSD/Mac OS**: Uses shells based on **Bash**.  
 - **Solaris**: Includes all shells above.  
 
-## Why This Matters?
+### Why This Matters?
 - Shells let you control the computer.  
 - Different shells have extra features (like command history).  
 - The password file tells the system where your files are and which shell to use.  
@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-## How it works:
+### How it works:
 
 **Input:** Takes a folder name (e.g., `./a.out /dev`).
 
@@ -186,13 +186,13 @@ stdin
 ... (more files)
 ```
 
-## Errors:
+### Errors:
 
 - **Permission denied:** Can’t open folder.
 - **Not a directory:** Tried to list a file, not a folder.
 
 
-## Working Directory
+### Working Directory
 
 **What is it?**  
 The folder your program is "in" right now.
@@ -204,7 +204,7 @@ The folder your program is "in" right now.
 If working directory is `/home/user`, then `docs/file.txt` → `/home/user/docs/file.txt`.
 
 
-## Home Directory
+### Home Directory
 
 **What is it?**  
 Your personal folder when you log in (e.g., `/home/yourname`).
@@ -221,12 +221,12 @@ $ cd ~  # Shortcut to go home.
 
 # 1.5 Input and Output
 
-## **File Descriptors**  
+### **File Descriptors**  
 - **What are they?**  
   File descriptors are like "file numbers" the computer uses to track open files.  
   - Example: When you open a file, the computer gives you a number (like 0, 1, 2) to work with it.  
 
-## **Standard Input, Output, and Error**  
+### **Standard Input, Output, and Error**  
 By default, every program gets 3 "file numbers":  
 1. **Standard Input (0)**: Where the program reads data (usually your keyboard).  
 2. **Standard Output (1)**: Where the program writes results (usually your screen).  
@@ -236,7 +236,7 @@ By default, every program gets 3 "file numbers":
   `ls > file.list`  
   - Runs `ls` but saves output to `file.list` instead of the screen.  
 
-## **Unbuffered I/O**  
+### **Unbuffered I/O**  
 - **What is it?**  
   Basic functions to read/write files directly (no automatic help from the computer).  
   - Key functions: `open()`, `read()`, `write()`, `close()`.  
@@ -261,20 +261,20 @@ int main(void) {
 }
 ```
 
-## How it works:
+### How it works:
 
 - Reads data in chunks (size `BUFFSIZE`).
 - Writes the same data to output.
 - Stops when there’s no more input or an error.
 
 
-## Run Examples:
+### Run Examples:
 
 - `./a.out > data`: Saves typed input to `data`.
 - `./a.out < infile > outfile`: Copies `infile` to `outfile`.
 
 
-## Standard I/O
+### Standard I/O
 
 **What is it?**  
 Easier functions with automatic buffering (the computer manages data chunks for you).
@@ -283,7 +283,7 @@ Easier functions with automatic buffering (the computer manages data chunks for 
 `printf()`, `fgets()`, `getc()`, `putc()`
 
 
-## Example Code
+### Example Code
 
 This program also copies input to output, but uses simpler functions:
 
@@ -303,14 +303,14 @@ int main(void) {
 }
 ```
 
-## How it works:
+### How it works:
 
 - Reads one character at a time.
 - Writes one character at a time.
 - Stops at EOF (like pressing Ctrl+D).
 
 
-## Buffered vs. Unbuffered I/O
+### Buffered vs. Unbuffered I/O
 
 | Unbuffered I/O                 | Standard I/O                                |
 |-------------------------------|---------------------------------------------|
@@ -319,7 +319,7 @@ int main(void) {
 | Faster for big files.         | Easier for text (reads lines, handles errors). |
 
 
-## Why This Matters
+### Why This Matters
 
 - File descriptors help programs work with files.
 - Redirection lets you control where input/output goes (files, screens, etc.).
@@ -328,12 +328,12 @@ int main(void) {
 
 # 1.6 Programs and Processes
 
-## **Program**  
+### **Program**  
 - A **program** is a file saved on your computer (like `a.out` after compiling code).  
 - Example: A recipe saved in a book.  
 
 
-## **Process**  
+### **Process**  
 - A **process** is when the program is **running** (like cooking using the recipe).  
 - Each process has a unique **Process ID (PID)** (e.g., `851`, `854`).  
 
@@ -353,13 +353,13 @@ $ ./a.out
 hello world from process ID 854  
 ```
 
-## `getpid()`
+### `getpid()`
 
 - `getpid()` gets the PID (Process ID).
 - Every time you run the program, it gets a new PID.
 
 
-## Process Control
+### Process Control
 
 **3 key functions control processes:**
 
@@ -372,7 +372,7 @@ hello world from process ID 854
 - `waitpid()`: Makes the parent wait for the child to finish.
 
 
-## Example: Simple Shell Program
+### Example: Simple Shell Program
 
 This code acts like a basic shell (reads commands and runs them):
 
@@ -404,7 +404,7 @@ int main(void) {
 }
 ```
 
-## How it works:
+### How it works:
 
 - Reads a command (e.g., `date`).
 - `fork()` creates a child process.
@@ -414,7 +414,7 @@ int main(void) {
 **Limitation:** Can’t pass arguments (e.g., `ls -l` won’t work).
 
 
-## Threads
+### Threads
 
 A thread is like a worker inside a process.  
 **1 process = 1+ threads.** Threads share memory (e.g., variables, files).
@@ -429,20 +429,20 @@ A thread is like a worker inside a process.
 - **Example:** Multiple threads in a web browser can load images and text at the same time.
 
 
-## Why This Matters
+### Why This Matters
 
 - **Processes** let you run multiple programs at once (e.g., browser + music player).
 - **Threads** make programs faster by doing many tasks at once (e.g., downloading files while scrolling).
 
 
 # 1.7 Error Handling
-## **What Happens When Errors Occur?**  
+### **What Happens When Errors Occur?**  
 - When a UNIX function fails (e.g., opening a file), it returns a special value (like `-1` or `NULL`).  
 - The computer sets a global variable **`errno`** to a number explaining why the error happened.  
   - Example: `EACCES` means "Permission denied".  
 
 
-## **Understanding `errno`**  
+### **Understanding `errno`**  
 - **`errno`** is like an error code book:  
   - Defined in `<errno.h>`.  
   - Every error has a name starting with `E` (e.g., `ENOENT` = "File not found").  
@@ -451,7 +451,7 @@ A thread is like a worker inside a process.
   2. `errno` is never `0` (so `0` means no error).  
 
 
-## **Error Messages**  
+### **Error Messages**  
 Two ways to get readable error messages:  
 
 1. **`strerror()`**:  
@@ -510,14 +510,14 @@ my_program: No such file or directory
 - **What to do:** Wait → Try again later.
 
 
-## Why This Matters
+### Why This Matters
 
 - `errno` tells you why something failed.
 - `perror()` / `strerror()` turn codes into human-readable messages.
 - Handle errors to make programs **stable** (don’t crash easily).
 
 
-## Tips
+### Tips
 
 - Always check function return values for errors.
 - Use `perror()` to include your program’s name in error messages (helps debugging).
@@ -526,7 +526,7 @@ my_program: No such file or directory
 
 # 1.8 User Identification
 
-## **User ID (UID)**  
+### **User ID (UID)**  
 - **What is it?**  
   Every user has a **unique number** (like a secret code) called a **User ID**.  
   - Assigned by the system admin.  
@@ -536,7 +536,7 @@ my_program: No such file or directory
   The system uses UID to check if you can do things (like open files).  
 
 
-## **Group ID (GID)**  
+### **Group ID (GID)**  
 - **What is it?**  
   A **Group ID** is a number for a "team" of users.  
   - Lets team members share files.  
@@ -558,7 +558,7 @@ int main() {
 
 ```
 
-## Output:
+### Output:
 
 `uid = 205, gid = 105`
 
@@ -566,19 +566,19 @@ int main() {
 - `getgid()` → Your Group ID.
 
 
-## Supplementary Groups
+### Supplementary Groups
 
-## What are they?
+### What are they?
 
 - You can belong to extra groups (like being in multiple clubs).
 - Started with BSD systems (up to 16 groups).
 - Modern systems allow 8+ groups (often 16).
 
-## Why use them?
+### Why use them?
 
 - Lets you access files from different teams without changing your main group.
 
-## Key Files
+### Key Files
 
 - `/etc/passwd`:  
   Stores user info (name, UID, GID, home folder, shell).
@@ -586,7 +586,7 @@ int main() {
 - `/etc/group`:  
   Stores group info (group name, GID, members).
 
-## Why This Matters
+### Why This Matters
 
 - `UID`/`GID` control file access (who can read/write).
 - `root` (UID 0) can do anything (be careful!).
@@ -595,18 +595,18 @@ int main() {
 
 # 1.9 Signals 
 
-## **What Are Signals?**  
+### **What Are Signals?**  
 Signals are like "alarms" sent to a program to tell it something happened.  
 - Examples:  
   - Dividing by zero → `SIGFPE` (math error signal).  
   - Pressing **Ctrl+C** → `SIGINT` (interrupt signal).  
 
-## **What Can a Program Do with a Signal?**  
+### **What Can a Program Do with a Signal?**  
 1. **Ignore It** (not safe for serious errors like crashes).  
 2. **Let Default Action Happen** (e.g., program stops).  
 3. **Catch It** (run a special function to handle the signal).  
 
-## **Example: Catching Ctrl+C**  
+### **Example: Catching Ctrl+C**  
 In the simple shell program (from Section 1.6), pressing **Ctrl+C** would normally exit.  
 But we can **catch** the signal to keep running:  
 
@@ -631,24 +631,24 @@ void sig_int(int signo) {
 }
 ```
 
-## What Changed?
+### What Changed?
 
 - Added `signal(SIGINT, sig_int)` → Catches Ctrl+C.
 - `sig_int()` prints `"interrupt"` and keeps the shell running.
 
-## How Signals Are Generated
+### How Signals Are Generated
 
 - **Hardware Errors:** e.g., invalid math operation.
 - **Terminal Keys:** e.g., Ctrl+C, Ctrl+\
 - **`kill` Command:** Send signals to other programs (requires permission).
 
-## Why This Matters
+### Why This Matters
 
 - Signals let programs handle unexpected events (like user interruptions).
 - **Example:** Saving data before exiting, or ignoring accidental Ctrl+C.
 
 # 1.10 Time Values & 1.11 System Calls
-## **1.10 Time Values**  
+### **1.10 Time Values**  
 
 ### **Two Types of Time in UNIX**:  
 1. **Calendar Time**:  
@@ -693,14 +693,14 @@ sys  0.03s  # System time
 
 ---
 
-## How They Work Together
+### How They Work Together
 
 - **Example 1:** `malloc()` (library) uses `sbrk()` (system call) to get memory.
 - **Example 2:** `printf()` (library) uses `write()` (system call) to print text.
 
 ---
 
-## Comparison
+### Comparison
 
 | System Calls              | Library Functions                 |
 |---------------------------|-----------------------------------|
@@ -709,7 +709,7 @@ sys  0.03s  # System time
 
 ---
 
-## Why This Matters
+### Why This Matters
 
 - **Time values** help track performance (e.g., why a program is slow).
 - **System Calls** are the backbone – they let programs interact with the OS safely.
