@@ -332,7 +332,6 @@ int main(void) {
 - A **program** is a file saved on your computer (like `a.out` after compiling code).  
 - Example: A recipe saved in a book.  
 
----
 
 ## **Process**  
 - A **process** is when the program is **running** (like cooking using the recipe).  
@@ -359,7 +358,6 @@ hello world from process ID 854
 - `getpid()` gets the PID (Process ID).
 - Every time you run the program, it gets a new PID.
 
----
 
 ## Process Control
 
@@ -373,7 +371,6 @@ hello world from process ID 854
 
 - `waitpid()`: Makes the parent wait for the child to finish.
 
----
 
 ## Example: Simple Shell Program
 
@@ -444,7 +441,6 @@ A thread is like a worker inside a process.
 - The computer sets a global variable **`errno`** to a number explaining why the error happened.  
   - Example: `EACCES` means "Permission denied".  
 
----
 
 ## **Understanding `errno`**  
 - **`errno`** is like an error code book:  
@@ -454,7 +450,6 @@ A thread is like a worker inside a process.
   1. Only check `errno` **after** a function fails (it keeps old values otherwise).  
   2. `errno` is never `0` (so `0` means no error).  
 
----
 
 ## **Error Messages**  
 Two ways to get readable error messages:  
@@ -540,7 +535,6 @@ my_program: No such file or directory
 - **Why it matters?**  
   The system uses UID to check if you can do things (like open files).  
 
----
 
 ## **Group ID (GID)**  
 - **What is it?**  
